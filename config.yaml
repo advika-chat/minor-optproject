@@ -1,0 +1,53 @@
+# All seeds, dates and parameters live here. Scripts run from the repo root.
+
+seed: 42
+
+data:
+  start_date: "2015-01-01"
+  end_date: "2026-10-30"   # fixed (not "today") so results are reproducible
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  index_ticker: "^NSEI"     # NIFTY 50 index (Yahoo Finance)
+  min_history_fraction: 0.95  # drop tickers with less non-missing data than this
+  tickers_file: "data/nifty50_tickers.csv"  # unverified list: you must check vs NSE
+  # Survivorship bias: current constituents only. See docs/limitations.md.
+
+  cleaning:
+    ffill_limit_days: 3     # forward-fill gaps up to this many consecutive days
+    jump_threshold: 0.20    # flag |daily simple return| above this as possible split/data error
+
+  plots:
+    rolling_vol_window: 60  # trading days, for rolling index volatility
+    shaded_periods:
+      covid_crash: ["2020-02-01", "2020-03-31"]
+      year_2022: ["2022-01-01", "2022-12-31"]
+
+# ASSUMPTION - TO BE CONFIRMED BY YOU: annual risk-free rate of 6.5%
+# (placeholder approximating Indian government bond / T-bill yields).
+# Not sourced from data; confirm or replace before reporting any Sharpe ratio.
+risk_free_rate: 0.065
+
+trading_days: 252
+
+portfolio:
+  weight_cap: 0.10          # max weight per asset
+  long_only: true
+
+markowitz:
+  frontier_points: 50
+
+costs:
+  transaction_cost_bps: 10
+
+risk:
+  cvar_alpha: 0.95
+
+backtest:
+  # ASSUMPTIONS - please confirm
+  rolling_window_days: 252  # ~1 trading year
+  rebalance_frequency: "M"  # pandas offset alias; M = month-end
+
+paths:
+  figures_dir: "outputs/figures"
+  tables_dir: "outputs/tables"
+  results_log: "docs/results_log.md"

@@ -1,0 +1,56 @@
+# WARNING: This list was written from the assistant's memory, NOT taken from NSE.
+# YOU MUST VERIFY it against NSE's official NIFTY 50 constituents (niftyindices.com)
+# before relying on any result. Constituents change twice a year; this list may be
+# out of date, and some Yahoo Finance symbols may have changed (e.g. renames/demergers).
+# Any ticker that fails to download or lacks full history is reported by scripts/run_data.py.
+ticker,company
+ADANIENT.NS,Adani Enterprises
+ADANIPORTS.NS,Adani Ports and SEZ
+APOLLOHOSP.NS,Apollo Hospitals
+ASIANPAINT.NS,Asian Paints
+AXISBANK.NS,Axis Bank
+BAJAJ-AUTO.NS,Bajaj Auto
+BAJFINANCE.NS,Bajaj Finance
+BAJAJFINSV.NS,Bajaj Finserv
+BEL.NS,Bharat Electronics
+BHARTIARTL.NS,Bharti Airtel
+CIPLA.NS,Cipla
+COALINDIA.NS,Coal India
+DRREDDY.NS,Dr. Reddy's Laboratories
+EICHERMOT.NS,Eicher Motors
+ETERNAL.NS,Eternal (formerly Zomato)
+GRASIM.NS,Grasim Industries
+HCLTECH.NS,HCL Technologies
+HDFCBANK.NS,HDFC Bank
+HDFCLIFE.NS,HDFC Life Insurance
+HEROMOTOCO.NS,Hero MotoCorp
+HINDALCO.NS,Hindalco Industries
+HINDUNILVR.NS,Hindustan Unilever
+ICICIBANK.NS,ICICI Bank
+INDUSINDBK.NS,IndusInd Bank
+INFY.NS,Infosys
+ITC.NS,ITC
+JIOFIN.NS,Jio Financial Services
+JSWSTEEL.NS,JSW Steel
+KOTAKBANK.NS,Kotak Mahindra Bank
+LT.NS,Larsen & Toubro
+M&M.NS,Mahindra & Mahindra
+MARUTI.NS,Maruti Suzuki
+NESTLEIND.NS,Nestle India
+NTPC.NS,NTPC
+ONGC.NS,ONGC
+POWERGRID.NS,Power Grid Corporation
+RELIANCE.NS,Reliance Industries
+SBILIFE.NS,SBI Life Insurance
+SBIN.NS,State Bank of India
+SHRIRAMFIN.NS,Shriram Finance
+SUNPHARMA.NS,Sun Pharmaceutical
+TATACONSUM.NS,Tata Consumer Products
+TATAMOTORS.NS,Tata Motors
+TATASTEEL.NS,Tata Steel
+TCS.NS,Tata Consultancy Services
+TECHM.NS,Tech Mahindra
+TITAN.NS,Titan Company
+TRENT.NS,Trent
+ULTRACEMCO.NS,UltraTech Cement
+WIPRO.NS,Wipro
