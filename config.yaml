@@ -57,6 +57,51 @@ backtest:
   # ASSUMPTIONS - please confirm
   rolling_window_days: 252  # ~1 trading year
   rebalance_frequency: "M"  # pandas offset alias; M = month-end
+  # --- rolling-window backtest (src/backtest.py, scripts/run_backtest.py; docs/backtest_spec.md). Fixed before running. ---
+  # rolling_window_days above is the INNER training window of the walk-forward epsilon selection (src/eps_selection.py) and is left unchanged;
+  # window_days is the window of the portfolios themselves.
+  window_days: 504
+  sens_window_days: 252
+  rebalance_every_days: 21     # trading days between rebalances (replaces the month-end alias for this backtest)
+  start_position_min: 504      # first possible rebalance position: max(window_days, regimes_stress.hmm_min_history); the labelled-day check can only delay it
+  primary_labels: "hmm2_stress"
+  secondary_labels: "vol_two"
+  theta_floor_sharpe: 0.25     # S_floor in theta_hat = sqrt(trading_days) / max(S_hat, S_floor)
+  solver_tol: 1.0e-11          # tolerance of the convex-solver calls made by this backtest for DR-MSD (set tight up front)
+  ext_grid_extra_eps: [0.5, 1.0, 2.0, 5.0, 10.0]   # appended to the grid in the DR-MSD extended-grid sensitivity only
+  michaud_draws: 500           # equals robust.n_draws; the pilot may force a smaller number (disclosed)
+  n_jobs: 18
+  time_budget_minutes: 90
+  pilot_dates: 3
+  checkpoint_dir: "outputs/cache_bt"
+  progress_log: "outputs/cache_bt/progress.log"
+  output_suffix: "_bt"
+  notes_path: "docs/backtest_notes.md"
+  stress_windows:              # fixed by date, independent of regime labels
+    covid_2020: ["2020-02-01", "2020-04-30"]
+    year_2022: ["2022-01-01", "2022-12-31"]
+  bootstrap: {n_resamples: 5000, block_length: 21, seed: 20261031, ci_level: 0.95}
+  primary_methods: ["plugin_maxsharpe", "plugin_minvar", "equal_weight", "nifty_price_index", "lw_maxsharpe", "michaud", "wc_box",
+                    "wc_ellipsoid", "cvar_plugin", "drcvar_cv", "drmsd_cv", "drcvar_regime", "drmsd_regime"]
+  window_sens_methods: ["plugin_maxsharpe", "plugin_minvar", "lw_maxsharpe", "drcvar_cv", "drmsd_cv", "drcvar_regime", "drmsd_regime"]
+  checks:                      # tolerances for the script's checks, fixed before running
+    weight_sum_tol: 1.0e-8
+    cap_tol: 1.0e-8
+    lookahead_dates: 5
+    lookahead_seed: 11
+    lookahead_labels_recompute_dates: 1   # of those, dates for which the HMM labels are also recomputed from truncated data (slow)
+    lookahead_weight_tol: 1.0e-5          # stored weights vs weights recomputed with data from t on zeroed. CHANGED from 1e-6 after the first run: plug-in weights match exactly,
+                                          # DR-MSD (interior-point solver) differs by 2e-6 to 3e-6 across process state, as in the simulation study (which used 1e-5)
+    cost_tol: 1.0e-12
+    turnover_tol: 1.0e-9
+    eps0_cvar_value_tol: 1.0e-7           # DR-CVaR at eps=0 vs plug-in CVaR LP: the CVaR VALUES must agree (weights of an LP need not be unique)
+    eps0_msd_weight_tol: 1.0e-5           # DR-MSD at eps=0 vs the same objective solved as a QP at its own return with the own active-set solver
+    plateau_eps: 0.21544346900318845      # DR-CVaR at this epsilon must be 1/N up to eps_selection_ext.plateau_tolerance (effective N ratio)
+    one_over_n_turnover_max: 0.10         # mean turnover of 1/N per rebalance must lie in (0, this]. CHANGED from 0.05 (an arbitrary guess) after the first run measured 0.0518;
+                                          # an independent calculation of the drift turnover from the 21-day returns gives 0.0518 too
+    repro_dates: 3
+    repro_tol: 1.0e-5                     # CHANGED from 1e-6 after the first run (same reason as lookahead_weight_tol; observed 1.8e-6)
+    eps_near_tie_tol: 1.0e-5              # a re-run may pick a neighbouring epsilon only if the two out-of-fold criteria differ by at most this
 
 paths:
   figures_dir: "outputs/figures"

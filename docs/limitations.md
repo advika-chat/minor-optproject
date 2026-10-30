@@ -231,3 +231,21 @@ Everything in `scripts/run_sensitivity.py` is in-sample: parameters are estimate
   out-of-fold Sharpe values were tied to within 2.7e-6; the true Sharpe of the chosen portfolio changed by at most 7.3e-8 (the H1 effect is about 5e-3).
 * With this objective the 1/N portfolio is reached only at epsilon of about 2 to 5, above the largest value of the pre-specified grid; in the primary study the chosen portfolio is
   therefore never exactly 1/N. The `ext_grid` scenario, added after a weights-only probe, extends the grid to show the plateau.
+
+<!-- backtest-limitations -->
+## Rolling-window backtest (scripts/run_backtest.py)
+
+* **Survivorship.** The universe is the 40 stocks that are in the current index and have full history; stocks that left the index, or were excluded for unadjusted corporate actions, are absent, which flatters every method.
+* **Price index.** The benchmark is the NIFTY 50 price index; it excludes dividends, so its return is understated against the net-of-cost total-return portfolios (whose stock returns are also price returns, so no method receives dividends either).
+* **Risk-free rate.** 6.5% a year is an assumption applied to the whole period.
+* **Cost model.** A flat 10 bps of turnover, no market impact or spread dependence, no taxes; trading happens at the prior close.
+* **Inner-window mismatch.** The walk-forward epsilon selection validates portfolios fitted on 252-day windows (`backtest.rolling_window_days`), while the backtest windows are 504 days; the selected epsilon is therefore tuned for a different estimation window than the one it is applied to (the 252-day sensitivity matches).
+* **Validation objective.** `eps_for_date` validates with DR-CVaR portfolios; for DR-MSD the same rule is applied to DR-MSD validation blocks, and the literal reading (epsilon from the DR-CVaR blocks) is a sensitivity.
+* **Few crisis episodes.** The sample holds one crash (February to April 2020) and one slow decline (2022); regime-specific conclusions rest on those few episodes.
+* **HMM barely flags 2022.** The two-state hidden Markov model labels about 22 of 248 days of 2022 as stress, so the regime-aware portfolios are in their stress setting for little of that year.
+* **theta_hat.** The mean weight of DR-MSD is estimated from the in-sample max-Sharpe ratio of each window, which is itself noisy (floored at 0.25); there is no truth to calibrate against.
+* **Truncated epsilon grid.** For DR-MSD the 1/N portfolio lies above the largest grid value (0.2154), so the primary DR-MSD cannot reach 1/N; an extended-grid sensitivity is reported.
+* **Bootstrap.** The circular block bootstrap treats 21-day blocks as exchangeable and cannot represent dependence between blocks or regime persistence beyond a block; the intervals are approximate, and many comparisons are shown without multiplicity correction.
+* **One path.** A single historical path is a single draw; the backtest is descriptive evidence and does not by itself confirm or refute a hypothesis.
+* **Tolerance changes after the first backtest run.** The look-ahead and reproducibility weight tolerances were loosened from 1e-6 to 1e-5 and the 1/N turnover ceiling raised from 0.05 to 0.10 after three checks failed narrowly; the causes (interior-point solver noise of 2e-6 to 3e-6 in DR-MSD weights; a guessed ceiling below the correct 0.0518) were established before the change and are recorded in `config.yaml` and `docs/results_log.md`.
+* **Epsilon at the grid edge.** The cross-validated DR-MSD epsilon equals the largest grid value at 82 of 115 rebalances, so the grid constrains the primary DR-MSD; the extended-grid sensitivity is the check.

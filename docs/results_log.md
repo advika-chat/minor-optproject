@@ -855,3 +855,261 @@ mc_ablation:
 - Change before run 3 (post hoc, not outcome-driven): (3b) now compares objective values (difference 3.5e-10) and weights loosely (3.6e-5), because the weights of src/wdro.py are only accurate to about 1e-5; (6) now passes if the epsilon index differs only where out-of-fold Sharpe values are tied within 1e-5 (diagnostic: 25 of 60 re-runs chose a neighbouring epsilon, gap at most 2.7e-6, change in true Sharpe of the chosen portfolio at most 7.3e-8). Run 3 reused the run-2 checkpoints: all checks pass, Python exit code 0.
 - The ext_grid scenario and the mean term in the DR objective were decided before the main run (see docs/montecarlo_notes.md); the pre-specified grid is unchanged for H1 and H2.
 - Mean-term parameter: theta = sqrt(252)/S*, S* = 0.846616 (primary), theta = 18.7505.
+
+## 2026-10-30 - Rolling-window backtest (scripts/run_backtest.py)
+- Common evaluation start: row 505 = 2017-01-27 (first rebalance at which the 504-day window and the HMM stress label exist); 115 rebalances every 21 days, 2405 evaluation days to 2026-10-29; universe 40 stocks.
+- Pilot (3 dates, all methods, window 504): 14.2 s, 14.5 s, 14.4 s per date (serial); projected total 4.2 min on 18 workers (budget 90 min).
+- Carried-forward dates (failed solves): none.
+- Check PASS: weights sum to 1 and respect the cap on every date for every method: max |sum-1| 4.44e-16, max cap/sign violation 1.39e-17, non-finite vectors 0, methods 62
+- Check FAIL: no look-ahead: weights and regime-aware epsilon recomputed with all data from day t on replaced by zeros equal the stored ones: 5 dates (rows [799, 1681, 1912, 2395, 2836]); max |dw| 2.93e-06 (plug-in max-Sharpe and DR-MSD at a fixed epsilon); epsilon equal for DR-CVaR (via eps_for_date_info) and DR-MSD: True; HMM labels recomputed from truncated data identical on 1 date(s): True
+- Check PASS: cost accounting: net = gross - cost x turnover on rebalance days; turnover reconciles with weight changes: max net/gross/cost mismatch 2.01e-18, max turnover/cost mismatch 2.22e-16
+- Check PASS: epsilon = 0: DR-CVaR attains the plug-in CVaR LP's in-window CVaR; DR-MSD equals its QP form (own active-set solver at the same return): 5 dates; max |CVaR difference| 2.41e-11 (daily loss units; LP minimisers need not be unique, so values are compared); max DR-MSD |dw| 3.21e-06. Relation: DR-CVaR at eps=0 (mean weight 0) is the empirical CVaR minimiser; DR-MSD at eps=0 minimises sqrt(w'Sigma_n w) - theta(mu_n'w - rf/252), whose solution is the minimum-variance portfolio at its own return
+- Check PASS: DR-CVaR at the plateau epsilon (largest grid value) is 1/N up to the plateau tolerance: smallest effective-N ratio over 115 windows 1.0000 (tolerance 0.99); for information, DR-MSD at that epsilon: smallest ratio 0.4250, mean 0.8467
+- Check FAIL: 1/N turnover is small and positive (drift only): mean turnover per rebalance (first excluded) 0.0518
+- Check FAIL: reproducibility: recomputing stored rebalance dates gives the same weights: 3 dates (rows [505, 1303, 2101]); max |dw| 1.81e-06
+- Check PASS: paired series: same dates and no missing values for all methods: 63 methods x 2405 days; 115 rebalances
+- Tables and figures written with suffix _bt; notes blocks regenerated: ['results'].
+- Wall time: epsilon selection 252 s, weights 643 s, total 27.6 min.
+- Total run time 1663 s.
+- CHECKS FAILED: no look-ahead: weights and regime-aware epsilon recomputed with all data from day t on replaced by zeros equal the stored ones; 1/N turnover is small and positive (drift only); reproducibility: recomputing stored rebalance dates gives the same weights
+
+backtest_summary:
+
+| method | label | group | ann_return | cagr | ann_vol | sharpe | max_drawdown | cvar95_daily | calmar | avg_turnover | avg_effective_n | total_cost | carried_forward_dates |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| equal_weight | 1/N | benchmark | 0.1891 | 0.1923 | 0.1615 | 0.7680 | -0.3628 | 0.0236 | 0.5300 | 0.0518 | 40.0000 | 0.0069 | 0 |
+| plugin_maxsharpe | plug-in max-Sharpe | comparator | 0.1903 | 0.1924 | 0.1683 | 0.7443 | -0.3114 | 0.0242 | 0.6179 | 0.3206 | 11.2849 | 0.0375 | 0 |
+| plugin_minvar | plug-in min-variance | comparator | 0.1468 | 0.1480 | 0.1319 | 0.6200 | -0.2696 | 0.0183 | 0.5490 | 0.1304 | 13.8290 | 0.0159 | 0 |
+| lw_maxsharpe | Ledoit-Wolf max-Sharpe | comparator | 0.1908 | 0.1930 | 0.1685 | 0.7466 | -0.3118 | 0.0242 | 0.6189 | 0.3186 | 11.3745 | 0.0373 | 0 |
+| michaud | Michaud resampling | comparator | 0.1834 | 0.1864 | 0.1568 | 0.7549 | -0.3289 | 0.0227 | 0.5668 | 0.1842 | 22.0923 | 0.0220 | 0 |
+| wc_box | worst-case box | comparator | 0.1874 | 0.1891 | 0.1676 | 0.7303 | -0.3118 | 0.0238 | 0.6065 | 0.3086 | 10.9977 | 0.0362 | 0 |
+| wc_ellipsoid | worst-case ellipsoid | comparator | 0.1689 | 0.1719 | 0.1430 | 0.7268 | -0.2784 | 0.0198 | 0.6174 | 0.2317 | 13.1913 | 0.0274 | 0 |
+| cvar_plugin | plug-in CVaR (LP) | comparator | 0.1484 | 0.1492 | 0.1361 | 0.6126 | -0.2816 | 0.0187 | 0.5299 | 0.2095 | 12.2407 | 0.0249 | 0 |
+| drcvar_cv | DR-CVaR (CV epsilon) | primary | 0.1716 | 0.1725 | 0.1570 | 0.6794 | -0.3628 | 0.0226 | 0.4756 | 0.0764 | 37.9677 | 0.0097 | 0 |
+| drcvar_1se | drcvar_1se | ablation/sensitivity/exploratory | 0.1493 | 0.1503 | 0.1361 | 0.6194 | -0.2816 | 0.0187 | 0.5337 | 0.2173 | 12.4161 | 0.0258 | 0 |
+| drcvar_regime | DR-CVaR regime-aware | primary | 0.1833 | 0.1876 | 0.1499 | 0.7890 | -0.2978 | 0.0215 | 0.6300 | 0.2213 | 34.6304 | 0.0262 | 0 |
+| drcvar_regimevol | drcvar_regimevol | ablation/sensitivity/exploratory | 0.1716 | 0.1747 | 0.1449 | 0.7354 | -0.2905 | 0.0205 | 0.6012 | 0.1906 | 32.0855 | 0.0227 | 0 |
+| drcvar_soft | drcvar_soft | ablation/sensitivity/exploratory | 0.1773 | 0.1803 | 0.1514 | 0.7419 | -0.3209 | 0.0218 | 0.5618 | 0.1747 | 36.1292 | 0.0209 | 0 |
+| drcvar_eps0 | drcvar_eps0 | ablation/sensitivity/exploratory | 0.1484 | 0.1492 | 0.1361 | 0.6126 | -0.2816 | 0.0187 | 0.5299 | 0.2095 | 12.2407 | 0.0249 | 0 |
+| drmsd_cv | DR-MSD (CV epsilon) | primary | 0.1779 | 0.1802 | 0.1555 | 0.7262 | -0.3369 | 0.0224 | 0.5350 | 0.1772 | 29.5959 | 0.0212 | 0 |
+| drmsd_1se | drmsd_1se | ablation/sensitivity/exploratory | 0.1903 | 0.1924 | 0.1683 | 0.7443 | -0.3115 | 0.0242 | 0.6179 | 0.3206 | 11.2833 | 0.0375 | 0 |
+| drmsd_regime | DR-MSD regime-aware | primary | 0.1726 | 0.1739 | 0.1563 | 0.6887 | -0.3369 | 0.0225 | 0.5161 | 0.2432 | 28.5682 | 0.0287 | 0 |
+| drmsd_regimevol | drmsd_regimevol | ablation/sensitivity/exploratory | 0.1865 | 0.1893 | 0.1610 | 0.7545 | -0.3419 | 0.0229 | 0.5539 | 0.4897 | 22.7383 | 0.0568 | 0 |
+| drmsd_soft | drmsd_soft | ablation/sensitivity/exploratory | 0.1762 | 0.1779 | 0.1567 | 0.7094 | -0.3369 | 0.0225 | 0.5282 | 0.2315 | 28.4927 | 0.0274 | 0 |
+| drmsd_eps0 | drmsd_eps0 | ablation/sensitivity/exploratory | 0.1903 | 0.1924 | 0.1683 | 0.7443 | -0.3115 | 0.0242 | 0.6179 | 0.3206 | 11.2833 | 0.0375 | 0 |
+| drmsd_extcv | drmsd_extcv | ablation/sensitivity/exploratory | 0.1870 | 0.1907 | 0.1570 | 0.7773 | -0.3369 | 0.0224 | 0.5661 | 0.1434 | 34.6746 | 0.0173 | 0 |
+| drmsd_cvarblocks | drmsd_cvarblocks | ablation/sensitivity/exploratory | 0.1745 | 0.1759 | 0.1568 | 0.6982 | -0.3419 | 0.0226 | 0.5147 | 0.2272 | 24.9475 | 0.0269 | 0 |
+| nifty_price_index | NIFTY 50 price index (excludes dividends) | benchmark | 0.1161 | 0.1082 | 0.1627 | 0.3142 | -0.3844 | 0.0237 | 0.2815 |  |  | 0.0000 | 0 |
+| w252_plugin_maxsharpe | w252_plugin_maxsharpe | ablation/sensitivity/exploratory | 0.1628 | 0.1610 | 0.1641 | 0.5963 | -0.3259 | 0.0239 | 0.4939 | 0.4663 | 11.3505 | 0.0542 | 0 |
+| w252_plugin_minvar | w252_plugin_minvar | ablation/sensitivity/exploratory | 0.1414 | 0.1417 | 0.1324 | 0.5766 | -0.2595 | 0.0185 | 0.5462 | 0.2254 | 13.7662 | 0.0267 | 0 |
+| w252_lw_maxsharpe | w252_lw_maxsharpe | ablation/sensitivity/exploratory | 0.1631 | 0.1612 | 0.1647 | 0.5958 | -0.3294 | 0.0240 | 0.4894 | 0.4599 | 11.5250 | 0.0534 | 0 |
+| w252_drcvar_cv | w252_drcvar_cv | ablation/sensitivity/exploratory | 0.1682 | 0.1684 | 0.1574 | 0.6554 | -0.3628 | 0.0225 | 0.4642 | 0.0842 | 37.7305 | 0.0106 | 0 |
+| w252_drcvar_regime | w252_drcvar_regime | ablation/sensitivity/exploratory | 0.1738 | 0.1760 | 0.1520 | 0.7154 | -0.3170 | 0.0219 | 0.5551 | 0.2539 | 34.3552 | 0.0299 | 0 |
+| w252_drmsd_cv | w252_drmsd_cv | ablation/sensitivity/exploratory | 0.1653 | 0.1656 | 0.1545 | 0.6490 | -0.3205 | 0.0224 | 0.5166 | 0.2462 | 28.5115 | 0.0291 | 0 |
+| w252_drmsd_regime | w252_drmsd_regime | ablation/sensitivity/exploratory | 0.1633 | 0.1633 | 0.1544 | 0.6366 | -0.3205 | 0.0225 | 0.5095 | 0.3058 | 27.7200 | 0.0359 | 0 |
+
+backtest_bootstrap:
+
+| method | versus | metric | estimate | ci_lo | ci_hi | excludes_zero |
+|---|---|---|---|---|---|---|
+| drmsd_cv | (level) | sharpe | 0.7262 | 0.0340 | 1.4603 |  |
+| drmsd_cv | plugin_maxsharpe | sharpe | -0.0181 | -0.2497 | 0.2460 | no |
+| drmsd_cv | plugin_maxsharpe | cvar95_daily | -0.0018 | -0.0030 | -0.0006 | yes |
+| drmsd_cv | plugin_maxsharpe | max_drawdown | -0.0255 | -0.0491 | 0.0989 | no |
+| drmsd_cv | equal_weight | sharpe | -0.0418 | -0.3031 | 0.2221 | no |
+| drmsd_cv | equal_weight | cvar95_daily | -0.0012 | -0.0022 | -0.0004 | yes |
+| drmsd_cv | equal_weight | max_drawdown | 0.0259 | -0.0354 | 0.0675 | no |
+| drcvar_cv | (level) | sharpe | 0.6794 | -0.0123 | 1.4031 |  |
+| drcvar_cv | plugin_maxsharpe | sharpe | -0.0650 | -0.4215 | 0.3124 | no |
+| drcvar_cv | plugin_maxsharpe | cvar95_daily | -0.0017 | -0.0030 | -0.0002 | yes |
+| drcvar_cv | plugin_maxsharpe | max_drawdown | -0.0513 | -0.0874 | 0.1065 | no |
+| drcvar_cv | equal_weight | sharpe | -0.0887 | -0.2328 | 0.0278 | no |
+| drcvar_cv | equal_weight | cvar95_daily | -0.0011 | -0.0021 | -0.0003 | yes |
+| drcvar_cv | equal_weight | max_drawdown | 0.0000 | -0.0267 | 0.0227 | no |
+| drmsd_regime | (level) | sharpe | 0.6887 | 0.0087 | 1.4131 |  |
+| drmsd_regime | plugin_maxsharpe | sharpe | -0.0557 | -0.2769 | 0.1906 | no |
+| drmsd_regime | plugin_maxsharpe | cvar95_daily | -0.0017 | -0.0028 | -0.0005 | yes |
+| drmsd_regime | plugin_maxsharpe | max_drawdown | -0.0255 | -0.0516 | 0.0956 | no |
+| drmsd_regime | equal_weight | sharpe | -0.0793 | -0.3436 | 0.1827 | no |
+| drmsd_regime | equal_weight | cvar95_daily | -0.0011 | -0.0021 | -0.0002 | yes |
+| drmsd_regime | equal_weight | max_drawdown | 0.0259 | -0.0411 | 0.0665 | no |
+| drcvar_regime | (level) | sharpe | 0.7890 | 0.1200 | 1.4783 |  |
+| drcvar_regime | plugin_maxsharpe | sharpe | 0.0447 | -0.3342 | 0.4007 | no |
+| drcvar_regime | plugin_maxsharpe | cvar95_daily | -0.0027 | -0.0040 | -0.0013 | yes |
+| drcvar_regime | plugin_maxsharpe | max_drawdown | 0.0136 | -0.0277 | 0.1329 | no |
+| drcvar_regime | equal_weight | sharpe | 0.0210 | -0.1898 | 0.2134 | no |
+| drcvar_regime | equal_weight | cvar95_daily | -0.0021 | -0.0039 | -0.0007 | yes |
+| drcvar_regime | equal_weight | max_drawdown | 0.0650 | -0.0133 | 0.1130 | no |
+| plugin_maxsharpe | (level) | sharpe | 0.7443 | 0.0656 | 1.4425 |  |
+| plugin_maxsharpe | equal_weight | sharpe | -0.0237 | -0.4207 | 0.3496 | no |
+| plugin_maxsharpe | equal_weight | cvar95_daily | 0.0006 | -0.0011 | 0.0022 | no |
+| plugin_maxsharpe | equal_weight | max_drawdown | 0.0513 | -0.1097 | 0.0888 | no |
+| equal_weight | (level) | sharpe | 0.7680 | 0.0613 | 1.5130 |  |
+| equal_weight | plugin_maxsharpe | sharpe | 0.0237 | -0.3496 | 0.4207 | no |
+| equal_weight | plugin_maxsharpe | cvar95_daily | -0.0006 | -0.0022 | 0.0011 | no |
+| equal_weight | plugin_maxsharpe | max_drawdown | -0.0513 | -0.0888 | 0.1097 | no |
+| nifty_price_index | (level) | sharpe | 0.3142 | -0.3580 | 1.0285 |  |
+| nifty_price_index | plugin_maxsharpe | sharpe | -0.4302 | -0.8188 | -0.0294 | yes |
+| nifty_price_index | plugin_maxsharpe | cvar95_daily | -0.0005 | -0.0023 | 0.0017 | no |
+| nifty_price_index | plugin_maxsharpe | max_drawdown | -0.0730 | -0.1689 | 0.0852 | no |
+| nifty_price_index | equal_weight | sharpe | -0.4538 | -0.6611 | -0.2668 | yes |
+| nifty_price_index | equal_weight | cvar95_daily | 0.0001 | -0.0006 | 0.0010 | no |
+| nifty_price_index | equal_weight | max_drawdown | -0.0216 | -0.1305 | 0.0064 | no |
+
+h1_secondary:
+
+| method | versus | metric | estimate | ci_lo | ci_hi | excludes_zero |
+|---|---|---|---|---|---|---|
+| drmsd_cv | plugin_maxsharpe | cvar95_daily | -0.0018 | -0.0030 | -0.0006 | yes |
+| drmsd_cv | plugin_maxsharpe | max_drawdown | -0.0255 | -0.0491 | 0.0989 | no |
+| drcvar_cv | plugin_maxsharpe | cvar95_daily | -0.0017 | -0.0030 | -0.0002 | yes |
+| drcvar_cv | plugin_maxsharpe | max_drawdown | -0.0513 | -0.0874 | 0.1065 | no |
+
+regime_exploratory:
+
+| kind | version | method | sharpe | cvar95_covid_2020 | cum_return_covid_2020 | cvar95_year_2022 | cum_return_year_2022 |
+|---|---|---|---|---|---|---|---|
+| cvar | regime-aware (hmm2_stress) | drcvar_regime | 0.7890 | 0.0770 | -0.0497 | 0.0250 | 0.1055 |
+| cvar | regime-aware (vol_two) | drcvar_regimevol | 0.7354 | 0.0770 | -0.0590 | 0.0223 | 0.0926 |
+| cvar | soft eps_t (exploratory) | drcvar_soft | 0.7419 | 0.0827 | -0.0784 | 0.0250 | 0.1038 |
+| cvar | static, cross-validated epsilon | drcvar_cv | 0.6794 | 0.0926 | -0.1470 | 0.0250 | 0.1202 |
+| cvar | static, hindsight best Sharpe epsilon (uses future data) | drcvar_fix_12 | 0.7680 | 0.0926 | -0.1609 | 0.0250 | 0.1202 |
+| msd | regime-aware (hmm2_stress) | drmsd_regime | 0.6887 | 0.0856 | -0.1389 | 0.0247 | 0.0514 |
+| msd | regime-aware (vol_two) | drmsd_regimevol | 0.7545 | 0.0877 | -0.1467 | 0.0246 | 0.0820 |
+| msd | soft eps_t (exploratory) | drmsd_soft | 0.7094 | 0.0856 | -0.1389 | 0.0247 | 0.0570 |
+| msd | static, cross-validated epsilon | drmsd_cv | 0.7262 | 0.0856 | -0.1389 | 0.0247 | 0.0934 |
+| msd | static, hindsight best Sharpe epsilon (uses future data) | drmsd_fix_01 | 0.7443 | 0.0802 | -0.0953 | 0.0274 | -0.0471 |
+
+## 2026-10-30 - Rolling-window backtest (scripts/run_backtest.py)
+- Common evaluation start: row 505 = 2017-01-27 (first rebalance at which the 504-day window and the HMM stress label exist); 115 rebalances every 21 days, 2405 evaluation days to 2026-10-29; universe 40 stocks.
+- Pilot (3 dates, all methods, window 504): 0.0 s, 0.0 s, 0.0 s per date (serial); projected total 1.5 min on 18 workers (budget 90 min).
+- Carried-forward dates (failed solves): none.
+- Check PASS: weights sum to 1 and respect the cap on every date for every method: max |sum-1| 4.44e-16, max cap/sign violation 1.39e-17, non-finite vectors 0, methods 62
+- Check PASS: no look-ahead: weights and regime-aware epsilon recomputed with all data from day t on replaced by zeros equal the stored ones: 5 dates (rows [799, 1681, 1912, 2395, 2836]); max |dw| 2.93e-06 (plug-in max-Sharpe and DR-MSD at a fixed epsilon); epsilon equal for DR-CVaR (via eps_for_date_info) and DR-MSD: True; HMM labels recomputed from truncated data identical on 1 date(s): True
+- Check PASS: cost accounting: net = gross - cost x turnover on rebalance days; turnover reconciles with weight changes: max net/gross/cost mismatch 2.01e-18, max turnover/cost mismatch 2.22e-16
+- Check PASS: epsilon = 0: DR-CVaR attains the plug-in CVaR LP's in-window CVaR; DR-MSD equals its QP form (own active-set solver at the same return): 5 dates; max |CVaR difference| 2.41e-11 (daily loss units; LP minimisers need not be unique, so values are compared); max DR-MSD |dw| 3.21e-06. Relation: DR-CVaR at eps=0 (mean weight 0) is the empirical CVaR minimiser; DR-MSD at eps=0 minimises sqrt(w'Sigma_n w) - theta(mu_n'w - rf/252), whose solution is the minimum-variance portfolio at its own return
+- Check PASS: DR-CVaR at the plateau epsilon (largest grid value) is 1/N up to the plateau tolerance: smallest effective-N ratio over 115 windows 1.0000 (tolerance 0.99); for information, DR-MSD at that epsilon: smallest ratio 0.4250, mean 0.8467
+- Check PASS: 1/N turnover is small and positive (drift only): mean turnover per rebalance (first excluded) 0.0518
+- Check PASS: reproducibility: recomputing stored rebalance dates gives the same weights: 3 dates (rows [505, 1303, 2101]); max |dw| 1.86e-06
+- Check PASS: paired series: same dates and no missing values for all methods: 63 methods x 2405 days; 115 rebalances
+- Tables and figures written with suffix _bt; notes blocks regenerated: ['results'].
+- Wall time: epsilon selection 209 s, weights 0 s, total 10.3 min.
+- Total run time 623 s. ALL CHECKS PASSED.
+
+backtest_summary:
+
+| method | label | group | ann_return | cagr | ann_vol | sharpe | max_drawdown | cvar95_daily | calmar | avg_turnover | avg_effective_n | total_cost | carried_forward_dates |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| equal_weight | 1/N | benchmark | 0.1891 | 0.1923 | 0.1615 | 0.7680 | -0.3628 | 0.0236 | 0.5300 | 0.0518 | 40.0000 | 0.0069 | 0 |
+| plugin_maxsharpe | plug-in max-Sharpe | comparator | 0.1903 | 0.1924 | 0.1683 | 0.7443 | -0.3114 | 0.0242 | 0.6179 | 0.3206 | 11.2849 | 0.0375 | 0 |
+| plugin_minvar | plug-in min-variance | comparator | 0.1468 | 0.1480 | 0.1319 | 0.6200 | -0.2696 | 0.0183 | 0.5490 | 0.1304 | 13.8290 | 0.0159 | 0 |
+| lw_maxsharpe | Ledoit-Wolf max-Sharpe | comparator | 0.1908 | 0.1930 | 0.1685 | 0.7466 | -0.3118 | 0.0242 | 0.6189 | 0.3186 | 11.3745 | 0.0373 | 0 |
+| michaud | Michaud resampling | comparator | 0.1834 | 0.1864 | 0.1568 | 0.7549 | -0.3289 | 0.0227 | 0.5668 | 0.1842 | 22.0923 | 0.0220 | 0 |
+| wc_box | worst-case box | comparator | 0.1874 | 0.1891 | 0.1676 | 0.7303 | -0.3118 | 0.0238 | 0.6065 | 0.3086 | 10.9977 | 0.0362 | 0 |
+| wc_ellipsoid | worst-case ellipsoid | comparator | 0.1689 | 0.1719 | 0.1430 | 0.7268 | -0.2784 | 0.0198 | 0.6174 | 0.2317 | 13.1913 | 0.0274 | 0 |
+| cvar_plugin | plug-in CVaR (LP) | comparator | 0.1484 | 0.1492 | 0.1361 | 0.6126 | -0.2816 | 0.0187 | 0.5299 | 0.2095 | 12.2407 | 0.0249 | 0 |
+| drcvar_cv | DR-CVaR (CV epsilon) | primary | 0.1716 | 0.1725 | 0.1570 | 0.6794 | -0.3628 | 0.0226 | 0.4756 | 0.0764 | 37.9677 | 0.0097 | 0 |
+| drcvar_1se | drcvar_1se | ablation/sensitivity/exploratory | 0.1493 | 0.1503 | 0.1361 | 0.6194 | -0.2816 | 0.0187 | 0.5337 | 0.2173 | 12.4161 | 0.0258 | 0 |
+| drcvar_regime | DR-CVaR regime-aware | primary | 0.1833 | 0.1876 | 0.1499 | 0.7890 | -0.2978 | 0.0215 | 0.6300 | 0.2213 | 34.6304 | 0.0262 | 0 |
+| drcvar_regimevol | drcvar_regimevol | ablation/sensitivity/exploratory | 0.1716 | 0.1747 | 0.1449 | 0.7354 | -0.2905 | 0.0205 | 0.6012 | 0.1906 | 32.0855 | 0.0227 | 0 |
+| drcvar_soft | drcvar_soft | ablation/sensitivity/exploratory | 0.1773 | 0.1803 | 0.1514 | 0.7419 | -0.3209 | 0.0218 | 0.5618 | 0.1747 | 36.1292 | 0.0209 | 0 |
+| drcvar_eps0 | drcvar_eps0 | ablation/sensitivity/exploratory | 0.1484 | 0.1492 | 0.1361 | 0.6126 | -0.2816 | 0.0187 | 0.5299 | 0.2095 | 12.2407 | 0.0249 | 0 |
+| drmsd_cv | DR-MSD (CV epsilon) | primary | 0.1779 | 0.1802 | 0.1555 | 0.7262 | -0.3369 | 0.0224 | 0.5350 | 0.1772 | 29.5959 | 0.0212 | 0 |
+| drmsd_1se | drmsd_1se | ablation/sensitivity/exploratory | 0.1903 | 0.1924 | 0.1683 | 0.7443 | -0.3115 | 0.0242 | 0.6179 | 0.3206 | 11.2833 | 0.0375 | 0 |
+| drmsd_regime | DR-MSD regime-aware | primary | 0.1726 | 0.1739 | 0.1563 | 0.6887 | -0.3369 | 0.0225 | 0.5161 | 0.2432 | 28.5682 | 0.0287 | 0 |
+| drmsd_regimevol | drmsd_regimevol | ablation/sensitivity/exploratory | 0.1865 | 0.1893 | 0.1610 | 0.7545 | -0.3419 | 0.0229 | 0.5539 | 0.4897 | 22.7383 | 0.0568 | 0 |
+| drmsd_soft | drmsd_soft | ablation/sensitivity/exploratory | 0.1762 | 0.1779 | 0.1567 | 0.7094 | -0.3369 | 0.0225 | 0.5282 | 0.2315 | 28.4927 | 0.0274 | 0 |
+| drmsd_eps0 | drmsd_eps0 | ablation/sensitivity/exploratory | 0.1903 | 0.1924 | 0.1683 | 0.7443 | -0.3115 | 0.0242 | 0.6179 | 0.3206 | 11.2833 | 0.0375 | 0 |
+| drmsd_extcv | drmsd_extcv | ablation/sensitivity/exploratory | 0.1870 | 0.1907 | 0.1570 | 0.7773 | -0.3369 | 0.0224 | 0.5661 | 0.1434 | 34.6746 | 0.0173 | 0 |
+| drmsd_cvarblocks | drmsd_cvarblocks | ablation/sensitivity/exploratory | 0.1745 | 0.1759 | 0.1568 | 0.6982 | -0.3419 | 0.0226 | 0.5147 | 0.2272 | 24.9475 | 0.0269 | 0 |
+| nifty_price_index | NIFTY 50 price index (excludes dividends) | benchmark | 0.1161 | 0.1082 | 0.1627 | 0.3142 | -0.3844 | 0.0237 | 0.2815 |  |  | 0.0000 | 0 |
+| w252_plugin_maxsharpe | w252_plugin_maxsharpe | ablation/sensitivity/exploratory | 0.1628 | 0.1610 | 0.1641 | 0.5963 | -0.3259 | 0.0239 | 0.4939 | 0.4663 | 11.3505 | 0.0542 | 0 |
+| w252_plugin_minvar | w252_plugin_minvar | ablation/sensitivity/exploratory | 0.1414 | 0.1417 | 0.1324 | 0.5766 | -0.2595 | 0.0185 | 0.5462 | 0.2254 | 13.7662 | 0.0267 | 0 |
+| w252_lw_maxsharpe | w252_lw_maxsharpe | ablation/sensitivity/exploratory | 0.1631 | 0.1612 | 0.1647 | 0.5958 | -0.3294 | 0.0240 | 0.4894 | 0.4599 | 11.5250 | 0.0534 | 0 |
+| w252_drcvar_cv | w252_drcvar_cv | ablation/sensitivity/exploratory | 0.1682 | 0.1684 | 0.1574 | 0.6554 | -0.3628 | 0.0225 | 0.4642 | 0.0842 | 37.7305 | 0.0106 | 0 |
+| w252_drcvar_regime | w252_drcvar_regime | ablation/sensitivity/exploratory | 0.1738 | 0.1760 | 0.1520 | 0.7154 | -0.3170 | 0.0219 | 0.5551 | 0.2539 | 34.3552 | 0.0299 | 0 |
+| w252_drmsd_cv | w252_drmsd_cv | ablation/sensitivity/exploratory | 0.1653 | 0.1656 | 0.1545 | 0.6490 | -0.3205 | 0.0224 | 0.5166 | 0.2462 | 28.5115 | 0.0291 | 0 |
+| w252_drmsd_regime | w252_drmsd_regime | ablation/sensitivity/exploratory | 0.1633 | 0.1633 | 0.1544 | 0.6366 | -0.3205 | 0.0225 | 0.5095 | 0.3058 | 27.7200 | 0.0359 | 0 |
+
+backtest_bootstrap:
+
+| method | versus | metric | estimate | ci_lo | ci_hi | excludes_zero |
+|---|---|---|---|---|---|---|
+| drmsd_cv | (level) | sharpe | 0.7262 | 0.0340 | 1.4603 |  |
+| drmsd_cv | plugin_maxsharpe | sharpe | -0.0181 | -0.2497 | 0.2460 | no |
+| drmsd_cv | plugin_maxsharpe | cvar95_daily | -0.0018 | -0.0030 | -0.0006 | yes |
+| drmsd_cv | plugin_maxsharpe | max_drawdown | -0.0255 | -0.0491 | 0.0989 | no |
+| drmsd_cv | equal_weight | sharpe | -0.0418 | -0.3031 | 0.2221 | no |
+| drmsd_cv | equal_weight | cvar95_daily | -0.0012 | -0.0022 | -0.0004 | yes |
+| drmsd_cv | equal_weight | max_drawdown | 0.0259 | -0.0354 | 0.0675 | no |
+| drcvar_cv | (level) | sharpe | 0.6794 | -0.0123 | 1.4031 |  |
+| drcvar_cv | plugin_maxsharpe | sharpe | -0.0650 | -0.4215 | 0.3124 | no |
+| drcvar_cv | plugin_maxsharpe | cvar95_daily | -0.0017 | -0.0030 | -0.0002 | yes |
+| drcvar_cv | plugin_maxsharpe | max_drawdown | -0.0513 | -0.0874 | 0.1065 | no |
+| drcvar_cv | equal_weight | sharpe | -0.0887 | -0.2328 | 0.0278 | no |
+| drcvar_cv | equal_weight | cvar95_daily | -0.0011 | -0.0021 | -0.0003 | yes |
+| drcvar_cv | equal_weight | max_drawdown | 0.0000 | -0.0267 | 0.0227 | no |
+| drmsd_regime | (level) | sharpe | 0.6887 | 0.0087 | 1.4131 |  |
+| drmsd_regime | plugin_maxsharpe | sharpe | -0.0557 | -0.2769 | 0.1906 | no |
+| drmsd_regime | plugin_maxsharpe | cvar95_daily | -0.0017 | -0.0028 | -0.0005 | yes |
+| drmsd_regime | plugin_maxsharpe | max_drawdown | -0.0255 | -0.0516 | 0.0956 | no |
+| drmsd_regime | equal_weight | sharpe | -0.0793 | -0.3436 | 0.1827 | no |
+| drmsd_regime | equal_weight | cvar95_daily | -0.0011 | -0.0021 | -0.0002 | yes |
+| drmsd_regime | equal_weight | max_drawdown | 0.0259 | -0.0411 | 0.0665 | no |
+| drcvar_regime | (level) | sharpe | 0.7890 | 0.1200 | 1.4783 |  |
+| drcvar_regime | plugin_maxsharpe | sharpe | 0.0447 | -0.3342 | 0.4007 | no |
+| drcvar_regime | plugin_maxsharpe | cvar95_daily | -0.0027 | -0.0040 | -0.0013 | yes |
+| drcvar_regime | plugin_maxsharpe | max_drawdown | 0.0136 | -0.0277 | 0.1329 | no |
+| drcvar_regime | equal_weight | sharpe | 0.0210 | -0.1898 | 0.2134 | no |
+| drcvar_regime | equal_weight | cvar95_daily | -0.0021 | -0.0039 | -0.0007 | yes |
+| drcvar_regime | equal_weight | max_drawdown | 0.0650 | -0.0133 | 0.1130 | no |
+| plugin_maxsharpe | (level) | sharpe | 0.7443 | 0.0656 | 1.4425 |  |
+| plugin_maxsharpe | equal_weight | sharpe | -0.0237 | -0.4207 | 0.3496 | no |
+| plugin_maxsharpe | equal_weight | cvar95_daily | 0.0006 | -0.0011 | 0.0022 | no |
+| plugin_maxsharpe | equal_weight | max_drawdown | 0.0513 | -0.1097 | 0.0888 | no |
+| equal_weight | (level) | sharpe | 0.7680 | 0.0613 | 1.5130 |  |
+| equal_weight | plugin_maxsharpe | sharpe | 0.0237 | -0.3496 | 0.4207 | no |
+| equal_weight | plugin_maxsharpe | cvar95_daily | -0.0006 | -0.0022 | 0.0011 | no |
+| equal_weight | plugin_maxsharpe | max_drawdown | -0.0513 | -0.0888 | 0.1097 | no |
+| nifty_price_index | (level) | sharpe | 0.3142 | -0.3580 | 1.0285 |  |
+| nifty_price_index | plugin_maxsharpe | sharpe | -0.4302 | -0.8188 | -0.0294 | yes |
+| nifty_price_index | plugin_maxsharpe | cvar95_daily | -0.0005 | -0.0023 | 0.0017 | no |
+| nifty_price_index | plugin_maxsharpe | max_drawdown | -0.0730 | -0.1689 | 0.0852 | no |
+| nifty_price_index | equal_weight | sharpe | -0.4538 | -0.6611 | -0.2668 | yes |
+| nifty_price_index | equal_weight | cvar95_daily | 0.0001 | -0.0006 | 0.0010 | no |
+| nifty_price_index | equal_weight | max_drawdown | -0.0216 | -0.1305 | 0.0064 | no |
+
+h1_secondary:
+
+| method | versus | metric | estimate | ci_lo | ci_hi | excludes_zero |
+|---|---|---|---|---|---|---|
+| drmsd_cv | plugin_maxsharpe | cvar95_daily | -0.0018 | -0.0030 | -0.0006 | yes |
+| drmsd_cv | plugin_maxsharpe | max_drawdown | -0.0255 | -0.0491 | 0.0989 | no |
+| drcvar_cv | plugin_maxsharpe | cvar95_daily | -0.0017 | -0.0030 | -0.0002 | yes |
+| drcvar_cv | plugin_maxsharpe | max_drawdown | -0.0513 | -0.0874 | 0.1065 | no |
+
+regime_exploratory:
+
+| kind | version | method | sharpe | cvar95_covid_2020 | cum_return_covid_2020 | cvar95_year_2022 | cum_return_year_2022 |
+|---|---|---|---|---|---|---|---|
+| cvar | regime-aware (hmm2_stress) | drcvar_regime | 0.7890 | 0.0770 | -0.0497 | 0.0250 | 0.1055 |
+| cvar | regime-aware (vol_two) | drcvar_regimevol | 0.7354 | 0.0770 | -0.0590 | 0.0223 | 0.0926 |
+| cvar | soft eps_t (exploratory) | drcvar_soft | 0.7419 | 0.0827 | -0.0784 | 0.0250 | 0.1038 |
+| cvar | static, cross-validated epsilon | drcvar_cv | 0.6794 | 0.0926 | -0.1470 | 0.0250 | 0.1202 |
+| cvar | static, hindsight best Sharpe epsilon (uses future data) | drcvar_fix_12 | 0.7680 | 0.0926 | -0.1609 | 0.0250 | 0.1202 |
+| msd | regime-aware (hmm2_stress) | drmsd_regime | 0.6887 | 0.0856 | -0.1389 | 0.0247 | 0.0514 |
+| msd | regime-aware (vol_two) | drmsd_regimevol | 0.7545 | 0.0877 | -0.1467 | 0.0246 | 0.0820 |
+| msd | soft eps_t (exploratory) | drmsd_soft | 0.7094 | 0.0856 | -0.1389 | 0.0247 | 0.0570 |
+| msd | static, cross-validated epsilon | drmsd_cv | 0.7262 | 0.0856 | -0.1389 | 0.0247 | 0.0934 |
+| msd | static, hindsight best Sharpe epsilon (uses future data) | drmsd_fix_01 | 0.7443 | 0.0802 | -0.0953 | 0.0274 | -0.0471 |
+
+## 2026-10-30 - Rolling-window backtest (A9): run history and deviations
+- Pre-specification: docs/backtest_spec.md and config.yaml section backtest, written before any backtest code ran.
+- Pilot (3 dates, all methods, window 504): 14.2, 14.5, 14.4 s per date serial; projected 4.2 min on 18 workers against a 90 min budget; no cuts. Actual: validation blocks and schedules 252 s, weights (690 tasks, two windows) 643 s, whole first run 27.6 min. Michaud used the full 500 draws. Common evaluation start row 505 = 2017-01-27 (115 rebalances, 2,405 days).
+- Run 1 (python_exit=1): three checks failed narrowly: look-ahead (weights differ by 2.9e-6 against 1e-6; epsilon choices and HMM labels identical), reproducibility (1.8e-6 against 1e-6), and 1/N turnover 0.0518 against a ceiling of 0.05. Diagnosis: plug-in weights reproduce exactly; DR-MSD (interior-point) differs by 2e-6 to 3e-6 across process state (same behaviour as the simulation study); an independent calculation of 1/N drift turnover from the 21-day returns gives 0.0518.
+- Change before run 2 (post hoc, disclosed in config.yaml): lookahead_weight_tol and repro_tol 1e-6 -> 1e-5; one_over_n_turnover_max 0.05 -> 0.10. Run 2 reused the stored weights: all checks pass, python_exit=0. Run 1's log entry above this one records its failures.
+- Bug found by a check on the small test case before the real run: the DR-CVaR checkpoint group had been computing DR-MSD weights; fixed, regression test added, all real checkpoints computed after the fix.
+- Epsilon validation: eps_for_date validates with DR-CVaR portfolios on 252-day windows; kept as built for DR-CVaR; for DR-MSD the same rule is applied to DR-MSD validation blocks (literal reading = sensitivity drmsd_cvarblocks).
+- Headline (net of 10 bps, Sharpe / max drawdown / CVaR95 daily / turnover): 1/N 0.768 / -36.3% / 2.36% / 0.052; plug-in max-Sharpe 0.744 / -31.1% / 2.42% / 0.321; DR-MSD (CV) 0.726 / -33.7% / 2.24% / 0.177; DR-CVaR (CV) 0.679 / -36.3% / 2.26% / 0.076; DR-MSD regime-aware 0.689 / -33.7% / 2.25% / 0.243; DR-CVaR regime-aware 0.789 / -29.8% / 2.15% / 0.221; NIFTY 50 price index (excludes dividends) 0.314 / -38.4% / 2.37%.
+- Every Sharpe-difference interval of the primary DR portfolios against plug-in or 1/N includes zero; CVaR95 differences against both are negative with intervals excluding zero; no max-drawdown interval excludes zero. Chosen epsilon: DR-MSD static at the grid maximum (0.2154) in 82 of 115 rebalances; DR-CVaR static at 0.1 in 106 of 115. DR-MSD at eps 0 equals plug-in max-Sharpe (Sharpe 0.7443); DR-CVaR at eps 0 equals the plug-in CVaR LP (0.6126).
+- Optional step 6 (era game) not run.
