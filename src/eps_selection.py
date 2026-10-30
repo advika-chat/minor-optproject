@@ -270,7 +270,7 @@ def cv_curves(returns, labels, config, net, grid=None):
     return pd.DataFrame(rows)
 
 
-def eps_for_date_info(date, method, config, *, returns=None, benchmark=None, grid=None, rule="best"):
+def eps_for_date_info(date, method, config, *, returns=None, benchmark=None, grid=None, rule="best", label_fn=None):
     """eps for ``date`` using only data strictly before it, with details.
 
     ``returns`` (asset daily returns) and ``benchmark`` (benchmark daily returns, same index) are
@@ -278,9 +278,11 @@ def eps_for_date_info(date, method, config, *, returns=None, benchmark=None, gri
     ignored. ``grid`` (default ``wdro.eps_grid``) and ``rule`` ("best" or "one_se") select the
     eps grid and the selection rule. Returns {"eps", "source", "regime", "refit_position",
     "sharpe_net", "cvar_daily"} (the last two are the criterion values behind the choice, NaN for
-    the default)."""
+    the default). ``label_fn(benchmark_returns, config)`` (default: ``regime_series(..., method)["regime"]``)
+    returns the regime labels for a benchmark slice and is how other regime definitions are plugged in."""
     _check_inputs(returns, benchmark)
     grid = eps_grid(config) if grid is None else grid
+    labeller = label_fn if label_fn is not None else (lambda b, c: regime_series(b, method, c)["regime"])
     p = int(returns.index.searchsorted(pd.Timestamp(date), side="left"))   # rows strictly before date
     qs = [q for q in refit_positions(len(returns), config) if q <= p]
     if not qs:
@@ -289,8 +291,8 @@ def eps_for_date_info(date, method, config, *, returns=None, benchmark=None, gri
     q = qs[-1]
     r_q, b_q = returns.iloc[:q], benchmark.iloc[:q]
     net = compute_blocks(r_q, config, grid)
-    lab_q = regime_series(b_q, method, config)["regime"]
-    lab_p = regime_series(benchmark.iloc[:p], method, config)["regime"] if p > q else lab_q
+    lab_q = labeller(b_q, config)
+    lab_p = labeller(benchmark.iloc[:p], config) if p > q else lab_q
     now = lab_p.iloc[p - 1]
     last = eps_schedule(r_q, b_q, lab_q, config, net=net, positions=[q], grid=grid, rule=rule)
     if now == UNLABELLED:
@@ -302,7 +304,7 @@ def eps_for_date_info(date, method, config, *, returns=None, benchmark=None, gri
             "sharpe_net": float(row["sharpe_net"]), "cvar_daily": float(row["cvar_daily"])}
 
 
-def eps_for_date(date, method, config, *, returns=None, benchmark=None, grid=None, rule="best"):
+def eps_for_date(date, method, config, *, returns=None, benchmark=None, grid=None, rule="best", label_fn=None):
     """The eps to use on ``date`` (see ``eps_for_date_info``)."""
     return eps_for_date_info(date, method, config, returns=returns, benchmark=benchmark,
-                             grid=grid, rule=rule)["eps"]
+                             grid=grid, rule=rule, label_fn=label_fn)["eps"]

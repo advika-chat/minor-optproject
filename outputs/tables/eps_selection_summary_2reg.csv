@@ -1,0 +1,19 @@
+method,rule,regime,final_eps,best_eps,source,n_blocks,sharpe_net,se_best
+hmm2_stress,best,pooled,0.1,0.1,pooled,124,0.8578313615395236,0.3945058712446278
+hmm2_stress,best,calm,0.1,0.1,regime,94,1.0088305874346912,0.3824841910550884
+hmm2_stress,best,stress,0.001,0.001,regime,17,0.703163161514349,1.2749486892361566
+hmm2_stress,one_se,pooled,1e-05,0.1,pooled,124,0.5655275598022973,0.3945058712446278
+hmm2_stress,one_se,calm,0.004641588833612782,0.1,regime,94,0.7195980882876956,0.3824841910550884
+hmm2_stress,one_se,stress,1e-05,0.001,regime,17,0.6871617359441509,1.2749486892361566
+hmm2_stress,all_blocks_curve,calm,0.1,0.1,"interior (best below the plateau, lower value at larger eps)",96,0.8915186143704561,0.383435358015113
+hmm2_stress,all_blocks_curve,pooled,0.1,0.1,"interior (best below the plateau, lower value at larger eps)",126,0.7835159055334426,0.3885596449501007
+hmm2_stress,all_blocks_curve,stress,0.001,0.001,"interior (best below the plateau, lower value at larger eps)",17,0.703163161514349,1.2749486892361566
+vol_two,best,pooled,0.1,0.1,pooled,124,0.8578313615395236,0.3945058712446278
+vol_two,best,calm,0.1,0.1,regime,52,1.4362173947457293,0.5658453585520862
+vol_two,best,stress,0.1,0.1,regime,71,0.7000093048844451,0.5198920935935302
+vol_two,one_se,pooled,1e-05,0.1,pooled,124,0.5655275598022973,0.3945058712446278
+vol_two,one_se,calm,0.004641588833612782,0.1,regime,52,0.9556641496304594,0.5658453585520862
+vol_two,one_se,stress,1e-05,0.1,regime,71,0.5835554093765829,0.5198920935935302
+vol_two,all_blocks_curve,calm,0.1,0.1,plateau (1/N: same portfolio for every larger eps),54,1.1662392557678107,0.5718709362435807
+vol_two,all_blocks_curve,pooled,0.1,0.1,"interior (best below the plateau, lower value at larger eps)",126,0.7835159055334426,0.3885596449501007
+vol_two,all_blocks_curve,stress,0.1,0.1,"interior (best below the plateau, lower value at larger eps)",71,0.7000093048844451,0.5198920935935302

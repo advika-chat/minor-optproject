@@ -112,3 +112,27 @@ eps_selection_ext:
   eps_min: 1.0e-5
   eps_max: 0.21544346900318845
   eps_points: 14
+
+# --- calm / stress regimes and a continuous stress level (src/stress.py, scripts/run_stress.py) ---
+regimes_stress:
+  stress_threshold: 0.5        # hard label: stress if the filtered stress probability exceeds this
+  # HMM settings: identical to the existing 2-state HMM in the regimes section (a test checks they stay equal)
+  hmm_states: 2
+  hmm_refit_every: 21
+  hmm_restarts: 5
+  hmm_min_history: 504
+  hmm_max_iter: 200
+  hmm_tol: 1.0e-4
+  seed: 42
+  # cross-check: rank of current realised volatility within its own past (expanding window, past only)
+  vol_percentile_window: 21
+  vol_percentile_min_history: 252
+  # vol_two (two-bucket volatility labels) reuses the existing regimes.vol_* settings: calm = calm,
+  # stress = volatile + crisis of the vol_threshold method
+  sensitivity_thresholds: [0.3, 0.7]   # reported as a sensitivity table only, never used to choose a threshold
+  episode_min_days: 20                 # minimum length of a reported stress episode
+  episode_windows:                     # windows used to describe the stress level around known episodes
+    covid: ["2020-01-01", "2020-04-30"]
+    year_2022: ["2022-01-01", "2022-12-31"]
+  verify_positions: [700, 1200]        # saved hmm2 probabilities are checked against truncated recomputations at these row positions
+  output_suffix: "_2reg"

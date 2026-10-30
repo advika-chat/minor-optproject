@@ -257,3 +257,129 @@ Key numbers and findings are appended here as they are produced.
 - eps_for_date check hmm3/best: date 2017-12-07, regime calm, eps 0.1 (pooled_fallback); matches the full-sample schedule: True
 - eps_for_date check hmm3/one_se: date 2017-12-07, regime calm, eps 1e-05 (pooled_fallback); matches the full-sample schedule: True
 - Note on the two entries "Per-regime eps selection, extended grid and one-SE rule": the first extended run reported the hmm3 original-grid reproduction check as FAILED and exited with status 1. The cause was four rows where the earlier tie-break picked an arbitrary eps among numerically identical portfolios (|Sharpe difference| at most 7.5e-8), not a different selection. The check now accepts such float-level ties and reports their count. The second entry (all checks passed, exit status 0) supersedes the first; the selection numbers are identical in both.
+
+## 2026-10-30 - Calm/stress regimes, continuous stress level and two-regime eps selection (scripts/run_stress.py)
+- Two regimes (calm/stress) plus a continuous stress level, decided because the three-regime crisis buckets had too few validation blocks, and decided before any backtest. Config section regimes_stress; threshold 0.5 (fixed in advance, not tuned on eps results).
+- Stress level s_t = filtered probability of the higher-variance state of the 2-state Gaussian HMM (expanding window, refit every 21 days, 5 restarts, 504-day minimum training length, seed 42); reused from outputs/tables/regimes_labels.csv after checking that they sum to one, that the burn-in is 504 rows, and that at rows [700, 1200] they equal a recomputation on data truncated at that row (to 1e-8), which smoothed posteriors would not.
+- s_t is defined on 2406 of 2910 days (2017-01-25 to 2026-10-29). Cross-check: percentile rank of 21-day realised volatility within its own past, defined on 2638 days.
+- Correlation of s_t with the cross-check over 2406 common days: Pearson 0.531, Spearman 0.455. Mean |s_t - percentile| 0.318; days where they differ by more than 0.5: 25.7%.
+- Fraction of days with s_t > 0.5: 0.154 overall (371 of 2406 days). By calendar year (s_t > 0.5; vol_two stress share): 2016 nan (0.50); 2017 0.00 (0.07); 2018 0.47 (0.53); 2019 0.45 (0.74); 2020 0.30 (0.99); 2021 0.05 (0.66); 2022 0.09 (0.81); 2023 0.00 (0.30); 2024 0.03 (0.65); 2025 0.05 (0.40); 2026 0.09 (0.70)
+- s_t around known episodes:
+    covid: window 2020-01-01 to 2020-04-30; market peak 2020-01-14 (12362), trough 2020-03-23 (7610), drawdown -38.4%
+      s_t at peak 0.359; first date on/after the peak with s_t > 0.5: 2020-02-03 (14 trading days after the peak); that spell began 2020-02-03 (+14 days relative to the peak)
+      s_t at trough 1.000; stays above 0.5 until 2020-04-13 (12 trading days after the trough)
+      days with s_t > 0.5 inside the window: 57 of 81; vol_two stress days inside the window: 78 of 81
+    year_2022: window 2022-01-01 to 2022-12-31; market peak 2022-01-17 (18308), trough 2022-06-17 (15294), drawdown -16.5%
+      s_t at peak 0.005; first date on/after the peak with s_t > 0.5: 2022-01-24 (5 trading days after the peak); that spell began 2022-01-24 (+5 days relative to the peak)
+      s_t at trough 0.315 (not above 0.5); next date above: 2022-08-30
+      days with s_t > 0.5 inside the window: 22 of 248; vol_two stress days inside the window: 201 of 248
+- hmm2_stress: 6 stress episodes of at least 20 days; longest 2019-07-29 to 2019-10-23 (56 days, index +2.8%), 2018-02-02 to 2018-04-16 (48 days, index -4.4%), 2018-09-14 to 2018-11-27 (48 days, index -6.0%), 2019-05-13 to 2019-06-26 (32 days, index +5.0%), 2020-02-24 to 2020-04-13 (32 days, index -25.6%)
+- vol_two: 22 stress episodes of at least 20 days; longest 2020-01-06 to 2021-06-10 (355 days, index +28.7%), 2022-01-19 to 2022-07-20 (125 days, index -8.8%), 2018-09-11 to 2019-01-22 (88 days, index -4.5%), 2026-02-03 to 2026-06-10 (85 days, index -7.5%), 2019-07-08 to 2019-11-06 (80 days, index +1.3%)
+- Hard labels hmm2_stress vs vol_two agree on 56.7% of 2406 days labelled by both; confusion (rows hmm2_stress, columns vol_two):
+    vol_two      calm  stress
+    hmm2_stress              
+    calm          992    1043
+    stress          0     371
+- Fraction of stress days: hmm2_stress (threshold 0.5) 0.154 over 2406 labelled days; vol_two 0.577 over 2638 labelled days (stress = volatile + crisis of the existing method).
+- Threshold sensitivity (stress fraction only, not used to choose a threshold): 0.3: 0.183; 0.5: 0.154; 0.7: 0.122
+- eps selection: 126 walk-forward blocks of 21 days (WDRO cvar weights from the prior 252-day window, net of 10 bps), pooled by the PRIOR-day regime label; extended 14-point grid 1e-05 to 0.215; min 6 blocks per regime else the pooled eps; refit every 63 days. Primary rule: best (argmax net Sharpe). Sensitivity: one_se (smallest eps within one jackknife SE of the best; blocks treated as exchangeable, so the SE is probably too small). No significance test was run.
+- hmm2_stress:
+    rule best (PRIMARY): final refit eps pooled 0.1 (pooled, 124 blocks), calm 0.1 (regime, 94 blocks), stress 0.001 (regime, 17 blocks)
+      refits 42; both regimes regime-sourced at 29 refits, identical eps at 0 of them; all regime rows (incl. pooled fallbacks) share one eps at 10 refits
+      calm: sources over refits {'regime': 36, 'pooled_fallback': 4, 'default': 2}; blocks per refit min 0, median 34, max 94
+      stress: sources over refits {'regime': 29, 'pooled_fallback': 11, 'default': 2}; blocks per refit min 0, median 15, max 17
+    rule one_se (sensitivity): final refit eps pooled 1e-05 (pooled, 124 blocks), calm 0.00464 (regime, 94 blocks), stress 1e-05 (regime, 17 blocks)
+      refits 42; both regimes regime-sourced at 29 refits, identical eps at 26 of them; all regime rows (incl. pooled fallbacks) share one eps at 38 refits
+      calm: sources over refits {'regime': 36, 'pooled_fallback': 4, 'default': 2}; blocks per refit min 0, median 34, max 94
+      stress: sources over refits {'regime': 29, 'pooled_fallback': 11, 'default': 2}; blocks per refit min 0, median 15, max 17
+    all-blocks CV curve, calm (96 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.892 (jackknife SE 0.383)
+    all-blocks CV curve, pooled (126 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.784 (jackknife SE 0.389)
+    all-blocks CV curve, stress (17 blocks): best eps 0.001, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.703 (jackknife SE 1.275)
+- vol_two:
+    rule best (PRIMARY): final refit eps pooled 0.1 (pooled, 124 blocks), calm 0.1 (regime, 52 blocks), stress 0.1 (regime, 71 blocks)
+      refits 42; both regimes regime-sourced at 35 refits, identical eps at 10 of them; all regime rows (incl. pooled fallbacks) share one eps at 14 refits
+      calm: sources over refits {'regime': 38, 'default': 2, 'pooled_fallback': 2}; blocks per refit min 0, median 25, max 52
+      stress: sources over refits {'regime': 35, 'pooled_fallback': 5, 'default': 2}; blocks per refit min 0, median 36, max 71
+    rule one_se (sensitivity): final refit eps pooled 1e-05 (pooled, 124 blocks), calm 0.00464 (regime, 52 blocks), stress 1e-05 (regime, 71 blocks)
+      refits 42; both regimes regime-sourced at 35 refits, identical eps at 15 of them; all regime rows (incl. pooled fallbacks) share one eps at 19 refits
+      calm: sources over refits {'regime': 38, 'default': 2, 'pooled_fallback': 2}; blocks per refit min 0, median 25, max 52
+      stress: sources over refits {'regime': 35, 'pooled_fallback': 5, 'default': 2}; blocks per refit min 0, median 36, max 71
+    all-blocks CV curve, calm (54 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.1 -> plateau (1/N: same portfolio for every larger eps); Sharpe at best 1.166 (jackknife SE 0.572)
+    all-blocks CV curve, pooled (126 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.784 (jackknife SE 0.389)
+    all-blocks CV curve, stress (71 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.700 (jackknife SE 0.520)
+- soft eps hmm2_stress/best: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.489; stress eps above calm eps on 18.3% of those days, below on 65.1%, equal on 16.6%
+- soft eps hmm2_stress/one_se: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.101; stress eps above calm eps on 0.0% of those days, below on 10.1%, equal on 89.9%
+- soft eps vol_two/best: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.643; stress eps above calm eps on 23.6% of those days, below on 49.8%, equal on 26.7%
+- soft eps vol_two/one_se: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.273; stress eps above calm eps on 0.0% of those days, below on 59.9%, equal on 40.1%
+- eps_for_date check hmm2_stress/best: date 2017-08-30 (refit 651-1), regime calm, eps 0.1 (pooled_fallback); matches the full-sample schedule: True
+- eps_for_date check hmm2_stress/best: date 2017-08-31 (refit 651+0), regime calm, eps 0.1 (regime); matches the full-sample schedule: True
+- eps_for_date check hmm2_stress/best: date 2017-09-07 (refit 651+5), regime calm, eps 0.1 (regime); matches the full-sample schedule: True
+- eps_for_date check hmm2_stress/one_se: date 2017-09-07 (refit 651+5), regime calm, eps 0.0215 (regime); matches the full-sample schedule: True
+- eps_for_date check vol_two/best: date 2017-02-23 (refit 525-1), regime calm, eps 0.1 (pooled_fallback); matches the full-sample schedule: True
+- eps_for_date check vol_two/best: date 2017-02-27 (refit 525+0), regime calm, eps 0.0464 (regime); matches the full-sample schedule: True
+- eps_for_date check vol_two/best: date 2017-03-06 (refit 525+5), regime calm, eps 0.0464 (regime); matches the full-sample schedule: True
+- eps_for_date check vol_two/one_se: date 2017-03-06 (refit 525+5), regime calm, eps 0.00215 (regime); matches the full-sample schedule: True
+
+## 2026-10-30 - Calm/stress regimes, continuous stress level and two-regime eps selection (scripts/run_stress.py)
+- Two regimes (calm/stress) plus a continuous stress level, decided because the three-regime crisis buckets had too few validation blocks, and decided before any backtest. Config section regimes_stress; threshold 0.5 (fixed in advance, not tuned on eps results).
+- Stress level s_t = filtered probability of the higher-variance state of the 2-state Gaussian HMM (expanding window, refit every 21 days, 5 restarts, 504-day minimum training length, seed 42); reused from outputs/tables/regimes_labels.csv after checking that they sum to one, that the burn-in is 504 rows, and that at rows [700, 1200] they equal a recomputation on data truncated at that row (to 1e-8), which smoothed posteriors would not.
+- s_t is defined on 2406 of 2910 days (2017-01-25 to 2026-10-29). Cross-check: percentile rank of 21-day realised volatility within its own past, defined on 2638 days.
+- Correlation of s_t with the cross-check over 2406 common days: Pearson 0.531, Spearman 0.455. Mean |s_t - percentile| 0.318; days where they differ by more than 0.5: 25.7%.
+- Fraction of days with s_t > 0.5: 0.154 overall (371 of 2406 days). By calendar year (s_t > 0.5; vol_two stress share): 2016 nan (0.50); 2017 0.00 (0.07); 2018 0.47 (0.53); 2019 0.45 (0.74); 2020 0.30 (0.99); 2021 0.05 (0.66); 2022 0.09 (0.81); 2023 0.00 (0.30); 2024 0.03 (0.65); 2025 0.05 (0.40); 2026 0.09 (0.70)
+- s_t around known episodes:
+    covid: window 2020-01-01 to 2020-04-30; market peak 2020-01-14 (12362), trough 2020-03-23 (7610), drawdown -38.4%
+      s_t at peak 0.359; first date on/after the peak with s_t > 0.5: 2020-02-03 (14 trading days after the peak); that spell began 2020-02-03 (+14 days relative to the peak)
+      s_t at trough 1.000; stays above 0.5 until 2020-04-13 (12 trading days after the trough)
+      days with s_t > 0.5 inside the window: 57 of 81; vol_two stress days inside the window: 78 of 81
+    year_2022: window 2022-01-01 to 2022-12-31; market peak 2022-01-17 (18308), trough 2022-06-17 (15294), drawdown -16.5%
+      s_t at peak 0.005; first date on/after the peak with s_t > 0.5: 2022-01-24 (5 trading days after the peak); that spell began 2022-01-24 (+5 days relative to the peak)
+      s_t at trough 0.315 (not above 0.5); next date above: 2022-08-30
+      days with s_t > 0.5 inside the window: 22 of 248; vol_two stress days inside the window: 201 of 248
+- hmm2_stress: 6 stress episodes of at least 20 days; longest 2019-07-29 to 2019-10-23 (56 days, index +2.8%), 2018-02-02 to 2018-04-16 (48 days, index -4.4%), 2018-09-14 to 2018-11-27 (48 days, index -6.0%), 2019-05-13 to 2019-06-26 (32 days, index +5.0%), 2020-02-24 to 2020-04-13 (32 days, index -25.6%)
+- vol_two: 22 stress episodes of at least 20 days; longest 2020-01-06 to 2021-06-10 (355 days, index +28.7%), 2022-01-19 to 2022-07-20 (125 days, index -8.8%), 2018-09-11 to 2019-01-22 (88 days, index -4.5%), 2026-02-03 to 2026-06-10 (85 days, index -7.5%), 2019-07-08 to 2019-11-06 (80 days, index +1.3%)
+- Hard labels hmm2_stress vs vol_two agree on 56.7% of 2406 days labelled by both; confusion (rows hmm2_stress, columns vol_two):
+    vol_two      calm  stress
+    hmm2_stress              
+    calm          992    1043
+    stress          0     371
+- Base rates differ strongly: hmm2_stress labels 15.4% of its labelled days as stress, vol_two 57.7% (its calm bucket is only the lowest-volatility third by construction). Of the 371 hmm2_stress days, 0 are labelled calm by vol_two. Eps results for the two methods are therefore not comparisons of the same regimes.
+- Fraction of stress days: hmm2_stress (threshold 0.5) 0.154 over 2406 labelled days; vol_two 0.577 over 2638 labelled days (stress = volatile + crisis of the existing method).
+- Threshold sensitivity (stress fraction only, not used to choose a threshold): 0.3: 0.183; 0.5: 0.154; 0.7: 0.122
+- eps selection: 126 walk-forward blocks of 21 days (WDRO cvar weights from the prior 252-day window, net of 10 bps), pooled by the PRIOR-day regime label; extended 14-point grid 1e-05 to 0.215; min 6 blocks per regime else the pooled eps; refit every 63 days. Primary rule: best (argmax net Sharpe). Sensitivity: one_se (smallest eps within one jackknife SE of the best; blocks treated as exchangeable, so the SE is probably too small). No significance test was run.
+- hmm2_stress:
+    rule best (PRIMARY): final refit eps pooled 0.1 (pooled, 124 blocks), calm 0.1 (regime, 94 blocks), stress 0.001 (regime, 17 blocks)
+      refits 42; both regimes regime-sourced at 29 refits, identical eps at 0 of them; all regime rows (incl. pooled fallbacks) share one eps at 10 refits
+      calm: sources over refits {'regime': 36, 'pooled_fallback': 4, 'default': 2}; blocks per refit min 0, median 34, max 94
+      stress: sources over refits {'regime': 29, 'pooled_fallback': 11, 'default': 2}; blocks per refit min 0, median 15, max 17
+    rule one_se (sensitivity): final refit eps pooled 1e-05 (pooled, 124 blocks), calm 0.00464 (regime, 94 blocks), stress 1e-05 (regime, 17 blocks)
+      refits 42; both regimes regime-sourced at 29 refits, identical eps at 26 of them; all regime rows (incl. pooled fallbacks) share one eps at 38 refits
+      calm: sources over refits {'regime': 36, 'pooled_fallback': 4, 'default': 2}; blocks per refit min 0, median 34, max 94
+      stress: sources over refits {'regime': 29, 'pooled_fallback': 11, 'default': 2}; blocks per refit min 0, median 15, max 17
+    all-blocks CV curve, calm (96 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.892 (jackknife SE 0.383)
+    all-blocks CV curve, pooled (126 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.784 (jackknife SE 0.389)
+    all-blocks CV curve, stress (17 blocks): best eps 0.001, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.703 (jackknife SE 1.275)
+- vol_two:
+    rule best (PRIMARY): final refit eps pooled 0.1 (pooled, 124 blocks), calm 0.1 (regime, 52 blocks), stress 0.1 (regime, 71 blocks)
+      refits 42; both regimes regime-sourced at 35 refits, identical eps at 10 of them; all regime rows (incl. pooled fallbacks) share one eps at 14 refits
+      calm: sources over refits {'regime': 38, 'default': 2, 'pooled_fallback': 2}; blocks per refit min 0, median 25, max 52
+      stress: sources over refits {'regime': 35, 'pooled_fallback': 5, 'default': 2}; blocks per refit min 0, median 36, max 71
+    rule one_se (sensitivity): final refit eps pooled 1e-05 (pooled, 124 blocks), calm 0.00464 (regime, 52 blocks), stress 1e-05 (regime, 71 blocks)
+      refits 42; both regimes regime-sourced at 35 refits, identical eps at 15 of them; all regime rows (incl. pooled fallbacks) share one eps at 19 refits
+      calm: sources over refits {'regime': 38, 'default': 2, 'pooled_fallback': 2}; blocks per refit min 0, median 25, max 52
+      stress: sources over refits {'regime': 35, 'pooled_fallback': 5, 'default': 2}; blocks per refit min 0, median 36, max 71
+    all-blocks CV curve, calm (54 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.1 -> plateau (1/N: same portfolio for every larger eps); Sharpe at best 1.166 (jackknife SE 0.572)
+    all-blocks CV curve, pooled (126 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.784 (jackknife SE 0.389)
+    all-blocks CV curve, stress (71 blocks): best eps 0.1, plateau (identical 1/N portfolio) starts at 0.215 -> interior (best below the plateau, lower value at larger eps); Sharpe at best 0.700 (jackknife SE 0.520)
+- soft eps hmm2_stress/best: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.489; stress eps above calm eps on 18.3% of those days, below on 65.1%, equal on 16.6%
+- soft eps hmm2_stress/one_se: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.101; stress eps above calm eps on 0.0% of those days, below on 10.1%, equal on 89.9%
+- soft eps vol_two/best: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.643; stress eps above calm eps on 23.6% of those days, below on 49.8%, equal on 26.7%
+- soft eps vol_two/one_se: eps_t = eps_calm + s_t (eps_stress - eps_calm) from the eps selected at the latest refit; defined on 2406 days; corr(eps_t, s_t) -0.273; stress eps above calm eps on 0.0% of those days, below on 59.9%, equal on 40.1%
+- eps_for_date check hmm2_stress/best: date 2017-08-30 (refit 651-1), regime calm, eps 0.1 (pooled_fallback); matches the full-sample schedule: True
+- eps_for_date check hmm2_stress/best: date 2017-08-31 (refit 651+0), regime calm, eps 0.1 (regime); matches the full-sample schedule: True
+- eps_for_date check hmm2_stress/best: date 2017-09-07 (refit 651+5), regime calm, eps 0.1 (regime); matches the full-sample schedule: True
+- eps_for_date check hmm2_stress/one_se: date 2017-09-07 (refit 651+5), regime calm, eps 0.0215 (regime); matches the full-sample schedule: True
+- eps_for_date check vol_two/best: date 2017-02-23 (refit 525-1), regime calm, eps 0.1 (pooled_fallback); matches the full-sample schedule: True
+- eps_for_date check vol_two/best: date 2017-02-27 (refit 525+0), regime calm, eps 0.0464 (regime); matches the full-sample schedule: True
+- eps_for_date check vol_two/best: date 2017-03-06 (refit 525+5), regime calm, eps 0.0464 (regime); matches the full-sample schedule: True
+- eps_for_date check vol_two/one_se: date 2017-03-06 (refit 525+5), regime calm, eps 0.00215 (regime); matches the full-sample schedule: True
+- Note on the two entries "Calm/stress regimes, continuous stress level and two-regime eps selection": the second entry supersedes the first. The numbers are identical (the runs are deterministic); the second adds a base-rate sentence and replaces the misnamed fallback-share column in eps_fallback_stats_2reg.csv with explicit regime-sourced, pooled-fallback and default shares. Both runs exited with status 0.
