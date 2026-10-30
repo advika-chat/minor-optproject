@@ -236,7 +236,7 @@ Everything in `scripts/run_sensitivity.py` is in-sample: parameters are estimate
 ## Rolling-window backtest (scripts/run_backtest.py)
 
 * **Survivorship.** The universe is the 40 stocks that are in the current index and have full history; stocks that left the index, or were excluded for unadjusted corporate actions, are absent, which flatters every method.
-* **Price index.** The benchmark is the NIFTY 50 price index; it excludes dividends, so its return is understated against the net-of-cost total-return portfolios (whose stock returns are also price returns, so no method receives dividends either).
+* **Price index.** The benchmark is the NIFTY 50 price index; it excludes dividends, while the stock prices are dividend-adjusted (`auto_adjust=True`), so the portfolios' returns include dividends and the index's do not. The index return is understated relative to the portfolios and every comparison against the index favours the portfolios (as already stated under "Other known issues" above).
 * **Risk-free rate.** 6.5% a year is an assumption applied to the whole period.
 * **Cost model.** A flat 10 bps of turnover, no market impact or spread dependence, no taxes; trading happens at the prior close.
 * **Inner-window mismatch.** The walk-forward epsilon selection validates portfolios fitted on 252-day windows (`backtest.rolling_window_days`), while the backtest windows are 504 days; the selected epsilon is therefore tuned for a different estimation window than the one it is applied to (the 252-day sensitivity matches).
@@ -249,3 +249,12 @@ Everything in `scripts/run_sensitivity.py` is in-sample: parameters are estimate
 * **One path.** A single historical path is a single draw; the backtest is descriptive evidence and does not by itself confirm or refute a hypothesis.
 * **Tolerance changes after the first backtest run.** The look-ahead and reproducibility weight tolerances were loosened from 1e-6 to 1e-5 and the 1/N turnover ceiling raised from 0.05 to 0.10 after three checks failed narrowly; the causes (interior-point solver noise of 2e-6 to 3e-6 in DR-MSD weights; a guessed ceiling below the correct 0.0518) were established before the change and are recorded in `config.yaml` and `docs/results_log.md`.
 * **Epsilon at the grid edge.** The cross-validated DR-MSD epsilon equals the largest grid value at 82 of 115 rebalances, so the grid constrains the primary DR-MSD; the extended-grid sensitivity is the check.
+
+<!-- qa-additions -->
+## Additions from the independent validation (2026-10-31)
+
+* **Order of hypotheses and results.** The hypotheses, specification and results were committed together, so git history does not show that the hypotheses came first; the order is evidenced by file timestamps and the working log (`docs/results_log.md`), not by the commit sequence.
+* **Post-hoc tolerance changes.** The tolerance changes described under "Tolerance changes after the first backtest run" are disclosed in config comments, in the notes and in the log; they are not visible in `git log -p config.yaml`, because the file was committed only in its final state.
+* **Weight lag.** The Sharpe ranking of the regime-aware DR-CVaR portfolio does not survive a one-day lag of the weights: 0.761 against 0.768 for 1/N (0.789 without the lag, where it ranks first). The ranking is sensitive to that timing assumption.
+* **Cross-validated portfolios and 1/N.** Verified over the 115 rebalances (`outputs/tables/qa2_dr_vs_eqw_qa2.csv`): DR-CVaR (CV epsilon) is exactly 1/N (L1 distance below 1e-6) at 106 rebalances and sharply concentrated at the other 9 (2020-03-30 to 2020-12-02; L1 distance 1.20 to 1.30, effective N 13.5 to 15.1), so it is not "near 1/N" in those periods and its average effective N (38.0) mixes the two groups. DR-MSD (CV epsilon) is exactly 1/N at 10 rebalances and within L1 0.05 at 19; at the other 96 it is clearly different (mean L1 0.51, largest 1.45), and it sits at the grid maximum at 82. The statement that the cross-validated robust portfolios are at or near 1/N therefore holds for DR-CVaR only.
+* **Multiplicity.** 61 comparisons are reported (36 in the bootstrap table, 25 in the sensitivity table) with no multiplicity correction; 10 of the 36 and none of the 25 have an interval excluding zero.
