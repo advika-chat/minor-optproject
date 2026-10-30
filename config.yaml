@@ -9,7 +9,18 @@ data:
   processed_dir: "data/processed"
   index_ticker: "^NSEI"     # NIFTY 50 index (Yahoo Finance)
   min_history_fraction: 0.95  # drop tickers with less non-missing data than this
-  tickers_file: "data/nifty50_tickers.csv"  # unverified list: you must check vs NSE
+  nse_constituents_file: "data/raw/ind_nifty50list.csv"  # official NSE constituents (source of truth)
+  tickers_file: "data/nifty50_tickers.csv"  # built from the NSE file by scripts/run_data.py --rebuild-tickers
+  # Explicit exclusions: price series are NOT edited, the stocks are removed from the
+  # universe. Evidence for each is in docs/limitations.md and
+  # outputs/tables/data_jump_inspection.csv.
+  excluded_tickers:
+    - ticker: "ADANIENT.NS"
+      reason: "data-quality exclusion: unadjusted corporate action"
+    - ticker: "TRENT.NS"
+      reason: "data-quality exclusion: unadjusted corporate action"
+    - ticker: "TMPV.NS"
+      reason: "data-quality exclusion: unadjusted corporate action"
   # Survivorship bias: current constituents only. See docs/limitations.md.
 
   cleaning:

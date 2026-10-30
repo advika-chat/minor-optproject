@@ -1,5 +1,11 @@
 ticker,reason
+ADANIENT.NS,data-quality exclusion: unadjusted corporate action
+TRENT.NS,data-quality exclusion: unadjusted corporate action
+TMPV.NS,data-quality exclusion: unadjusted corporate action
+BSE.NS,no price at window start; first valid price 2017-02-03
 ETERNAL.NS,no price at window start; first valid price 2021-07-23
 HDFCLIFE.NS,no price at window start; first valid price 2017-11-17
+INDIGO.NS,no price at window start; first valid price 2015-11-10
 JIOFIN.NS,no price at window start; first valid price 2023-08-21
+MAXHEALTH.NS,no price at window start; first valid price 2020-08-21
 SBILIFE.NS,no price at window start; first valid price 2017-10-03

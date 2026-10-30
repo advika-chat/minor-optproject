@@ -97,3 +97,24 @@ def test_processed_shapes_consistent(processed):
     assert rs.index.equals(rl.index) and rs.index.equals(p.index[1:])
     assert b.index.equals(rs.index)  # benchmark file is aligned with the return rows
     assert (p > 0).all().all()
+
+
+def test_apply_exclusions_drops_columns_without_editing_prices(raw):
+    from src.data import apply_exclusions
+    excl = [{"ticker": "FULL", "reason": "r1"}, {"ticker": "NOT_THERE", "reason": "r2"}]
+    out, present = apply_exclusions(raw, excl)
+    assert "FULL" not in out.columns and present == {"FULL": "r1"}
+    pd.testing.assert_frame_equal(out, raw.drop(columns=["FULL"]))
+
+
+def test_config_exclusions_are_well_formed():
+    excl = CFG["data"]["excluded_tickers"]
+    tickers = load_tickers(CFG["data"]["tickers_file"])
+    assert {e["ticker"] for e in excl} == {"ADANIENT.NS", "TRENT.NS", "TMPV.NS"}
+    for e in excl:
+        assert e["ticker"] in tickers and e["reason"].startswith("data-quality exclusion")
+
+
+def test_processed_excludes_configured_tickers(processed):
+    excluded = {e["ticker"] for e in CFG["data"]["excluded_tickers"]}
+    assert excluded.isdisjoint(processed["prices"].columns)

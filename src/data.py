@@ -158,3 +158,116 @@ def summary_stats(simple_returns, trading_days):
         "skew": simple_returns.skew(),
         "excess_kurtosis": simple_returns.kurt(),
     })
+
+
+# --- official constituents, incremental download, jump inspection --------------
+
+def nse_constituents_to_table(csv_path, suffix=".NS"):
+    """Read NSE's ind_nifty50list.csv into a (ticker, company, industry, isin) table."""
+    raw = pd.read_csv(csv_path)
+    table = pd.DataFrame({
+        "ticker": raw["Symbol"].str.strip() + suffix,
+        "company": raw["Company Name"].str.strip(),
+        "industry": raw["Industry"].str.strip(),
+        "isin": raw["ISIN Code"].str.strip(),
+    })
+    if table["ticker"].duplicated().any():
+        raise ValueError("duplicate symbols in NSE file")
+    return table
+
+
+def write_ticker_csv(table, path, header_lines):
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        for line in header_lines:
+            f.write(f"# {line}\n")
+        table.to_csv(f, index=False, lineterminator="\n")
+
+
+def ticker_diff(old, new):
+    """Table (ticker, status) with status in {added, removed, both}."""
+    old, new = set(old), set(new)
+    rows = ([(t, "added") for t in sorted(new - old)]
+            + [(t, "removed") for t in sorted(old - new)]
+            + [(t, "both") for t in sorted(old & new)])
+    return pd.DataFrame(rows, columns=["ticker", "status"])
+
+
+def _download_close(symbols, start, end):
+    """Download adjusted closes; return (prices, failed) with no silent drops."""
+    raw = yf.download(list(symbols), start=start, end=end, auto_adjust=True,
+                      progress=False, group_by="column")
+    failed = {}
+    if raw is None or raw.empty:
+        return pd.DataFrame(), {s: "not returned by yfinance" for s in symbols}
+    prices = raw["Close"]
+    if isinstance(prices, pd.Series):
+        prices = prices.to_frame(list(symbols)[0])
+    for s in symbols:
+        if s not in prices.columns:
+            failed[s] = "not returned by yfinance"
+        elif prices[s].notna().sum() == 0:
+            failed[s] = "returned only NaN"
+    prices = prices.drop(columns=list(failed), errors="ignore")
+    prices.index = pd.to_datetime(prices.index).tz_localize(None)
+    return prices, failed
+
+
+def update_snapshot(symbols, snapshot_prices, snapshot_path, start, end, raw_dir):
+    """Download only symbols missing from the cached snapshot (new or previously
+    failed), merge them in and save a new timestamped snapshot.
+    Returns (prices, failed, path); `failed` covers only the symbols fetched now."""
+    needed = [s for s in symbols if s not in snapshot_prices.columns]
+    if not needed:
+        return snapshot_prices, {}, snapshot_path
+    log.info("downloading only new/failed symbols: %s", needed)
+    new, failed = _download_close(needed, start, end)
+    merged = snapshot_prices.join(new, how="outer") if not new.empty else snapshot_prices
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    path = Path(raw_dir) / f"prices_raw_{stamp}.parquet"
+    merged.to_parquet(path)
+    meta = {
+        "downloaded_utc": stamp, "yfinance_version": yf.__version__,
+        "start": start, "end": end, "auto_adjust": True,
+        "base_snapshot": snapshot_path.name, "requested": needed, "failed": failed,
+        "rows": int(len(merged)), "columns": int(merged.shape[1]),
+    }
+    path.with_suffix(".json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    return merged, failed, path
+
+
+def inspect_jump(symbol, date, n_around=2, pad_days=20):
+    """Raw (unadjusted) vs adjusted prices around `date` plus yfinance dividend/split
+    entries in the window. Returns (price table, actions table)."""
+    d = pd.Timestamp(date)
+    raw = yf.download(symbol, start=(d - pd.Timedelta(days=pad_days)).strftime("%Y-%m-%d"),
+                      end=(d + pd.Timedelta(days=pad_days)).strftime("%Y-%m-%d"),
+                      auto_adjust=False, progress=False)
+    if raw is None or raw.empty:
+        raise RuntimeError(f"no data for {symbol} around {date}")
+    if isinstance(raw.columns, pd.MultiIndex):
+        raw.columns = raw.columns.get_level_values(0)
+    raw.index = pd.to_datetime(raw.index).tz_localize(None)
+    pos = raw.index.searchsorted(d)
+    win = raw.iloc[max(pos - n_around, 0): pos + n_around + 1][
+        ["Open", "High", "Low", "Close", "Adj Close", "Volume"]].copy()
+    win["adj_over_close"] = win["Adj Close"] / win["Close"]
+    win["close_ret"] = raw["Close"].pct_change().reindex(win.index)
+    win["adj_ret"] = raw["Adj Close"].pct_change().reindex(win.index)
+    actions = yf.Ticker(symbol).actions
+    if actions is not None and len(actions):
+        actions.index = pd.to_datetime(actions.index).tz_localize(None)
+        lo, hi = d - pd.Timedelta(days=pad_days), d + pd.Timedelta(days=pad_days)
+        actions = actions[(actions.index >= lo) & (actions.index <= hi)]
+    else:
+        actions = pd.DataFrame()
+    return win, actions
+
+
+def apply_exclusions(prices, excluded):
+    """Drop config-listed data-quality exclusions without touching any price.
+
+    `excluded` is a list of {"ticker": ..., "reason": ...}. Returns
+    (prices without those columns, {ticker: reason} for those that were present)."""
+    reasons = {e["ticker"]: e["reason"] for e in excluded}
+    present = {t: r for t, r in reasons.items() if t in prices.columns}
+    return prices.drop(columns=list(present)), present

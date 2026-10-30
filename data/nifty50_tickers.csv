@@ -1,56 +1,54 @@
-# WARNING: This list was written from the assistant's memory, NOT taken from NSE.
-# YOU MUST VERIFY it against NSE's official NIFTY 50 constituents (niftyindices.com)
-# before relying on any result. Constituents change twice a year; this list may be
-# out of date, and some Yahoo Finance symbols may have changed (e.g. renames/demergers).
-# Any ticker that fails to download or lacks full history is reported by scripts/run_data.py.
-ticker,company
-ADANIENT.NS,Adani Enterprises
-ADANIPORTS.NS,Adani Ports and SEZ
-APOLLOHOSP.NS,Apollo Hospitals
-ASIANPAINT.NS,Asian Paints
-AXISBANK.NS,Axis Bank
-BAJAJ-AUTO.NS,Bajaj Auto
-BAJFINANCE.NS,Bajaj Finance
-BAJAJFINSV.NS,Bajaj Finserv
-BEL.NS,Bharat Electronics
-BHARTIARTL.NS,Bharti Airtel
-CIPLA.NS,Cipla
-COALINDIA.NS,Coal India
-DRREDDY.NS,Dr. Reddy's Laboratories
-EICHERMOT.NS,Eicher Motors
-ETERNAL.NS,Eternal (formerly Zomato)
-GRASIM.NS,Grasim Industries
-HCLTECH.NS,HCL Technologies
-HDFCBANK.NS,HDFC Bank
-HDFCLIFE.NS,HDFC Life Insurance
-HEROMOTOCO.NS,Hero MotoCorp
-HINDALCO.NS,Hindalco Industries
-HINDUNILVR.NS,Hindustan Unilever
-ICICIBANK.NS,ICICI Bank
-INDUSINDBK.NS,IndusInd Bank
-INFY.NS,Infosys
-ITC.NS,ITC
-JIOFIN.NS,Jio Financial Services
-JSWSTEEL.NS,JSW Steel
-KOTAKBANK.NS,Kotak Mahindra Bank
-LT.NS,Larsen & Toubro
-M&M.NS,Mahindra & Mahindra
-MARUTI.NS,Maruti Suzuki
-NESTLEIND.NS,Nestle India
-NTPC.NS,NTPC
-ONGC.NS,ONGC
-POWERGRID.NS,Power Grid Corporation
-RELIANCE.NS,Reliance Industries
-SBILIFE.NS,SBI Life Insurance
-SBIN.NS,State Bank of India
-SHRIRAMFIN.NS,Shriram Finance
-SUNPHARMA.NS,Sun Pharmaceutical
-TATACONSUM.NS,Tata Consumer Products
-TATAMOTORS.NS,Tata Motors
-TATASTEEL.NS,Tata Steel
-TCS.NS,Tata Consultancy Services
-TECHM.NS,Tech Mahindra
-TITAN.NS,Titan Company
-TRENT.NS,Trent
-ULTRACEMCO.NS,UltraTech Cement
-WIPRO.NS,Wipro
+# Source: official NSE NIFTY 50 constituents file (ind_nifty50list.csv), unmodified, 50 rows; '.NS' appended to each Symbol.
+# Retrieval date: 2026-10-30 (file modification date of the copy in data\raw).
+# Rebuild with: python -m scripts.run_data --rebuild-tickers
+ticker,company,industry,isin
+ADANIENT.NS,Adani Enterprises Ltd.,Metals & Mining,INE423A01024
+ADANIPORTS.NS,Adani Ports and Special Economic Zone Ltd.,Services,INE742F01042
+APOLLOHOSP.NS,Apollo Hospitals Enterprise Ltd.,Healthcare,INE437A01024
+ASIANPAINT.NS,Asian Paints Ltd.,Consumer Durables,INE021A01026
+AXISBANK.NS,Axis Bank Ltd.,Financial Services,INE238A01034
+BSE.NS,BSE Ltd.,Financial Services,INE118H01025
+BAJAJ-AUTO.NS,Bajaj Auto Ltd.,Automobile and Auto Components,INE917I01010
+BAJFINANCE.NS,Bajaj Finance Ltd.,Financial Services,INE296A01032
+BAJAJFINSV.NS,Bajaj Finserv Ltd.,Financial Services,INE918I01026
+BEL.NS,Bharat Electronics Ltd.,Capital Goods,INE263A01024
+BHARTIARTL.NS,Bharti Airtel Ltd.,Telecommunication,INE397D01024
+CIPLA.NS,Cipla Ltd.,Healthcare,INE059A01026
+COALINDIA.NS,Coal India Ltd.,Oil Gas & Consumable Fuels,INE522F01014
+DRREDDY.NS,Dr. Reddy's Laboratories Ltd.,Healthcare,INE089A01031
+EICHERMOT.NS,Eicher Motors Ltd.,Automobile and Auto Components,INE066A01021
+ETERNAL.NS,Eternal Ltd.,Consumer Services,INE758T01015
+GRASIM.NS,Grasim Industries Ltd.,Construction Materials,INE047A01021
+HCLTECH.NS,HCL Technologies Ltd.,Information Technology,INE860A01027
+HDFCBANK.NS,HDFC Bank Ltd.,Financial Services,INE040A01034
+HDFCLIFE.NS,HDFC Life Insurance Company Ltd.,Financial Services,INE795G01014
+HINDALCO.NS,Hindalco Industries Ltd.,Metals & Mining,INE038A01020
+HINDUNILVR.NS,Hindustan Unilever Ltd.,Fast Moving Consumer Goods,INE030A01027
+ICICIBANK.NS,ICICI Bank Ltd.,Financial Services,INE090A01021
+ITC.NS,ITC Ltd.,Fast Moving Consumer Goods,INE154A01025
+INFY.NS,Infosys Ltd.,Information Technology,INE009A01021
+INDIGO.NS,InterGlobe Aviation Ltd.,Services,INE646L01027
+JSWSTEEL.NS,JSW Steel Ltd.,Metals & Mining,INE019A01038
+JIOFIN.NS,Jio Financial Services Ltd.,Financial Services,INE758E01017
+KOTAKBANK.NS,Kotak Mahindra Bank Ltd.,Financial Services,INE237A01036
+LT.NS,Larsen & Toubro Ltd.,Construction,INE018A01030
+M&M.NS,Mahindra & Mahindra Ltd.,Automobile and Auto Components,INE101A01026
+MARUTI.NS,Maruti Suzuki India Ltd.,Automobile and Auto Components,INE585B01010
+MAXHEALTH.NS,Max Healthcare Institute Ltd.,Healthcare,INE027H01010
+NTPC.NS,NTPC Ltd.,Power,INE733E01010
+NESTLEIND.NS,Nestle India Ltd.,Fast Moving Consumer Goods,INE239A01024
+ONGC.NS,Oil & Natural Gas Corporation Ltd.,Oil Gas & Consumable Fuels,INE213A01029
+POWERGRID.NS,Power Grid Corporation of India Ltd.,Power,INE752E01010
+RELIANCE.NS,Reliance Industries Ltd.,Oil Gas & Consumable Fuels,INE002A01018
+SBILIFE.NS,SBI Life Insurance Company Ltd.,Financial Services,INE123W01016
+SHRIRAMFIN.NS,Shriram Finance Ltd.,Financial Services,INE721A01047
+SBIN.NS,State Bank of India,Financial Services,INE062A01020
+SUNPHARMA.NS,Sun Pharmaceutical Industries Ltd.,Healthcare,INE044A01036
+TCS.NS,Tata Consultancy Services Ltd.,Information Technology,INE467B01029
+TATACONSUM.NS,Tata Consumer Products Ltd.,Fast Moving Consumer Goods,INE192A01025
+TMPV.NS,Tata Motors Passenger Vehicles Ltd.,Automobile and Auto Components,INE155A01022
+TATASTEEL.NS,Tata Steel Ltd.,Metals & Mining,INE081A01020
+TECHM.NS,Tech Mahindra Ltd.,Information Technology,INE669C01036
+TITAN.NS,Titan Company Ltd.,Consumer Durables,INE280A01028
+TRENT.NS,Trent Ltd.,Consumer Services,INE849A01020
+ULTRACEMCO.NS,UltraTech Cement Ltd.,Construction Materials,INE481G01011

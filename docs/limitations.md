@@ -15,9 +15,7 @@ Consequences:
 - Mean-variance and robust optimisers are especially exposed, because they
   overweight assets with high estimated returns, and those estimates are inflated
   by selection.
-- The full-history filter adds to this: recently listed constituents are excluded
-  (for the 2026-10-30 run: ETERNAL, HDFCLIFE, JIOFIN, SBILIFE; see
-  `outputs/tables/data_dropped_tickers.csv`), which favours older, established companies.
+- The full-history filter adds to this: recently listed constituents are excluded (see `outputs/tables/data_dropped_tickers.csv` for the current list and listing dates), which favours older, established companies.
 - Any in-sample or backtest figure on this data should be read as optimistic. It
   is not evidence of real out-of-sample performance.
 
@@ -26,11 +24,7 @@ yfinance does not provide.
 
 ## Other known issues
 
-- **Unverified ticker list.** The 50 tickers were written from the assistant's
-  memory, not taken from NSE. They must be checked against NSE's official
-  constituents. `TATAMOTORS.NS` returned no data (Yahoo reports it as unavailable,
-  likely because of the company's demerger); it needs to be replaced by whatever
-  the verified list specifies.
+- **Ticker list source.** `data/nifty50_tickers.csv` is built from the official NSE constituents file (`data/raw/ind_nifty50list.csv`, retrieval date in the CSV header). Constituents change over time, so rebuild it with `python -m scripts.run_data --rebuild-tickers` whenever the NSE file is refreshed. NSE lists Tata Motors Passenger Vehicles Ltd. under symbol `TMPV`; `TATAMOTORS.NS` no longer returns data.
 - **Benchmark is a price index.** `^NSEI` excludes dividends while the stocks use
   dividend-adjusted prices, so comparisons against the index favour the stocks.
 - **Flagged jumps are not corrected.** Daily moves above 20% are flagged in
@@ -39,3 +33,111 @@ yfinance does not provide.
   artefacts. They should be checked by hand.
 - **Free data.** Yahoo Finance data is unaudited and can be revised between downloads.
   Raw snapshots are timestamped in `data/raw/` and not tracked by git.
+
+## Price-data issues found in review (2026-10-30)
+
+Each flagged move was inspected with `python -m scripts.run_data --inspect TICKER DATE`
+(raw vs adjusted prices, dividend/split entries, same-day cross-section). Output:
+`outputs/tables/data_jump_inspection.csv`. No price data has been edited or removed.
+
+### ADANIENT.NS, 2015-06-03 (-38.7%): corporate action, adjustment unreliable
+- Evidence in the data: Open 312.39 and High 312.39 against a prior close of 97.64, then
+  Close 59.80; Adj/Close ratio is constant (0.9417) so no adjustment step sits at this
+  date; yfinance reports no dividend or split in the window; the index fell 1.2% and the
+  median stock 1.0% that day; the lower price persists afterwards.
+- External evidence: Business Standard headlines found by web search ("Adani Enterprises
+  shares fall on demerger", "Why the 80% drop in Adani Enterprises is justified", search
+  summaries report 4 June 2015 as the record date and a fall of over 80% on 3 June). I could
+  not open the articles (HTTP 403), so this rests on the search summaries.
+- Reading: type (b), a demerger ex-date. The series shows -38.7%, not the roughly -80%
+  reported, and has an impossible Open, so the adjustment around this date is inconsistent.
+  Confidence the move is not an economic loss: fairly high. Confidence in any correction
+  factor: low, it cannot be derived from this data alone.
+- Related, not acted on: a business-standard headline on search ("Adani Enterprises trades
+  ex-date for spin off", 2018-09-06) coincides with the +20.9% flagged on that date, so that
+  move may also be a corporate-action artefact.
+
+### TRENT.NS, 2026-01-01 (-33.0%): unadjusted bonus issue, adjustment mis-dated
+- Evidence in the data: Adj/Close constant (0.9985), no actions reported by yfinance,
+  index +0.06% and median stock +0.5% that day, normal volume, level persists. The ratio
+  2864.93 / 4279.00 = 0.6695 is close to 2/3.
+- External evidence: Business Today (2026-06-04, read in full) reports a 1:2 bonus issue,
+  record date revised to 2026-06-04, shares settled at Rs 4,258.10 on 2026-06-03 and opened at
+  Rs 2,833.45 on 2026-06-04 after adjustment, and that some apps showed a ~33% fall because
+  they displayed unadjusted prices. In our series the 2026-06-03 close is already 2,834, so
+  prices from 2026-01-01 onward are bonus-adjusted while prices before 2026-01-01 are not.
+- Reading: type (b)/(c). The -33% is not a real move; the adjustment boundary in the source
+  series sits at 2026-01-01 instead of 2026-06-04. Confidence: high.
+
+### TMPV.NS, 2025-10-14 (-40.2%): demerger, history not adjusted
+- Found while checking the replacement for TATAMOTORS.NS, not in the original review list.
+- Evidence in the data: Open 400.00 vs prior close 660.75, no actions reported, Adj/Close
+  constant (0.9918), index -0.3%, median stock -0.4%, volume 52M vs 33M the day before;
+  history runs from 2015-01-02 (price 493), i.e. the pre-demerger Tata Motors series.
+- External evidence (web search summaries from several outlets, not the primary filing):
+  demerger effective 2025-10-01, record date 2025-10-14, 1:1 entitlement to shares in the
+  commercial-vehicles company. The official NSE file only gives the name and symbol.
+- Reading: type (b). The series spans the demerger without adjustment, so returns before
+  and after 2025-10-14 describe different businesses. Confidence: high that the move is
+  a corporate action; the correct factor is not verified (one blog cites a 68.85% cost split,
+  unconfirmed).
+
+### Decisions (2026-10-30): all three stocks excluded
+- `ADANIENT.NS`, `TRENT.NS` and `TMPV.NS` are excluded from the universe through the
+  config key `data.excluded_tickers` (each entry has a reason string). Price series are
+  not edited or corrected; the stocks are simply removed before alignment.
+- Reasons, by stock:
+  - `TMPV.NS`: pre-demerger history is unadjusted (-40.2% on 2025-10-14) and no verified
+    adjustment factor exists.
+  - `ADANIENT.NS`: suspect corporate-action artefacts on 2015-06-03 (-38.7%, impossible Open,
+    reported demerger ex-date) and possibly 2018-09-06 (+20.9%, search headline mentions a
+    spin-off ex-date); no verified factor.
+  - `TRENT.NS`: the source's 1:2 bonus adjustment is placed at 2026-01-01 instead of the
+    reported 2026-06-04 ex-date (-33.0% on 2026-01-01). Hand-correcting the prices was
+    rejected.
+- They appear in `outputs/tables/data_dropped_tickers.csv` with the reason
+  "data-quality exclusion: unadjusted corporate action". The evidence is kept in
+  `outputs/tables/data_jump_inspection.csv`.
+- Evidence limits: the ADANIENT and TMPV external evidence comes from web-search summaries
+  of news articles (the ADANIENT articles returned HTTP 403 and could not be opened), not
+  from exchange filings. The TRENT article was read in full.
+
+## Consequences of the final universe
+
+- **Final universe: 40 stocks.** Of the 50 NSE constituents, 3 were excluded for data quality
+  and 7 lack a price on 2015-01-02 (BSE, ETERNAL, HDFCLIFE, INDIGO, JIOFIN, MAXHEALTH,
+  SBILIFE); see `outputs/tables/data_dropped_tickers.csv`.
+- **The 2023 Adani tail event is no longer in the sample.** `ADANIENT.NS` fell 28.2%, 26.7%
+  (2023-02-01, 2023-02-02) and rebounded 20.0% (2023-02-08), roughly -60% from 2023-01-24 to
+  2023-02-28 on the source prices, while the index fell about 4.5% over the same dates.
+  Those 2023 returns are probably sound, but the stock is excluded because of its earlier
+  artefacts, so the dataset has lost its clearest single-name crash. `ADANIPORTS.NS`
+  (about -22% over the same dates) remains and carries part of the episode. Tail-risk
+  estimates (CVaR, Wasserstein radius calibration, regime detection) will understate
+  single-name stress relative to the full index. After the exclusions only 5
+  stock-days remain below -20%, the largest being -27.9% (AXISBANK, 2020-03-23).
+- **Tata Motors is absent from the sample.** NSE now lists it as `TMPV` only, and `TMPV.NS` is
+  excluded; `TATAMOTORS.NS` returns no data. The old Tata Motors series cannot be used
+  without a verified demerger adjustment. The universe therefore lacks one of the index's
+  large automobile names across the whole window, which biases sector composition and
+  correlations relative to the real index.
+- **IndusInd Bank, Wipro and Hero MotoCorp are not in the current NSE list.** They were in
+  the earlier list used for the first runs but are absent from the official file. I did not
+  verify when or why they left the index. Their absence adds survivorship bias beyond the
+  general effect described above, because they are exactly the names that are no longer
+  deemed index-worthy. Over 2015-01-02 to 2026-10-29 on the raw adjusted prices (computed
+  from the first raw snapshot, which still holds them):
+
+  | Stock | Annualised mean | Annualised vol | Price return over window | Worst day |
+  |---|---|---|---|---|
+  | INDUSINDBK | 9.0% | 39.8% | +13.7% | -27.2% (2025-03-11) |
+  | WIPRO | 9.8% | 25.8% | +110.9% | -9.2% (2024-07-22) |
+  | HEROMOTOCO | 11.2% | 27.7% | +135.8% | -11.0% (2020-03-23) |
+
+  The final universe has a median annualised mean of 17.0% and a median compounded price
+  return of about +353%. All three leavers sit well below that median, so excluding them
+  makes the sample look better than a 2015 investor holding today's list plus these names
+  would have seen. IndusInd also carries the heaviest tail in the earlier sample, which is
+  now gone. The earlier first-run figures also had a few other index changes (BSE, INDIGO,
+  MAXHEALTH, TMPV added) that do not reach the final universe because of history length
+  or exclusion.
