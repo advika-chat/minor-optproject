@@ -1,0 +1,9 @@
+method,regime,spells,avg_duration_days,max_duration_days
+vol_threshold,calm,56,19.928571428571427,163
+vol_threshold,crisis,45,17.11111111111111,115
+vol_threshold,volatile,100,7.52,46
+hmm2,calm,46,44.23913043478261,430
+hmm2,crisis,45,8.244444444444444,56
+hmm3,calm,98,11.540816326530612,169
+hmm3,crisis,39,3.2051282051282053,23
+hmm3,volatile,131,8.778625954198473,96

@@ -1,0 +1,4 @@
+pair,exact_agreement,calm_vs_not_calm_agreement
+vol_threshold vs hmm3,0.5652535328345802,0.8241895261845387
+vol_threshold vs hmm2,,0.5665004156275977
+hmm2 vs hmm3,,0.6209476309226932
