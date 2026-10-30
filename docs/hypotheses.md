@@ -1,0 +1,5 @@
+H1. Out of sample, Wasserstein DRO (epsilon chosen by cross-validation) outperforms plug-in Markowitz max-Sharpe. Primary test: Monte Carlo true out-of-sample Sharpe at training length T=252; the 95% interval of the paired difference (DRO minus plug-in max-Sharpe) must exclude 0 on the positive side. Secondary: lower CVaR95 and maximum drawdown in the backtest. Falsified if the Monte Carlo interval includes 0 or lies below 0.
+H2. The improvement of DRO over plug-in Markowitz is larger when the training window is short, because estimation error is larger. Test: Monte Carlo difference-in-differences between T=126 and T=504; supported if its 95% interval lies above 0.
+Fixed in advance: epsilon is the best out-of-fold value (argmax; ties to the smaller epsilon); the primary DRO is mean-variance; every DRO result is shown next to its epsilon=0 version and next to 1/N.
+Exploratory (reported, not tested): regime-aware epsilon with two regimes (calm / stress) versus the best static epsilon on CVaR95 in stress windows (Feb to Apr 2020; 2022) and full-sample Sharpe.
+Always reported, not tested: price-of-robustness curve, comparison with 1/N, game-theoretic results.

@@ -267,3 +267,66 @@ game:
   wasserstein_budget_tol: 1.0e-12          # transport cost of the constructed distribution may exceed eps by at most this (relative)
   notes_path: "docs/game_theory_notes.md"  # generated blocks of the notes are rewritten by the script
   output_suffix: "_game"
+
+# ---- Monte Carlo with known ground truth (hypotheses H1, H2; see docs/hypotheses.md) ----
+# Pre-specified before any run (the ext_grid scenario below is the one exception, see its comment); do not change after seeing results. The truth is built from the real
+# data (40-stock universe): Sigma_true = full-sample annualised covariance, mu_true = grand_mean +
+# mu_shrink_s * (mu_hat_full - grand_mean). Returns are i.i.d. daily multivariate Student-t (df below)
+# with daily covariance Sigma_true/trading_days. The grid is the eps_selection_ext grid (extension_grid)
+# thinned by grid_stride (1 = all 14 points; 2 = every second point, only if the pilot says the job is too long).
+# Pilot timing: ~3 s per run, so the whole job takes minutes and the full grid is kept.
+montecarlo:
+  base_seed: 20261030          # one base seed; each (T, run) gets a child seed via SeedSequence.spawn
+  n_runs: 500                  # runs per training length
+  T_list: [126, 252, 504]
+  T_primary: 252               # H1
+  T_short: 126                 # H2 compares T_short with T_long
+  T_long: 504
+  mu_shrink_s: 0.5             # primary s
+  student_df: 5
+  grid_stride: 1               # 1 = all 14 points of eps_selection_ext
+  cv_folds: 5                  # contiguous blocks inside the training window (valid: i.i.d. simulation)
+  # DR mean-variance used here: minimise  sqrt(w' Var_n w) + eps*||w||_p - theta*(mean_n'w - rf/trading_days)
+  # over the capped long-only simplex. theta = 0 is exactly src/wdro.py's mean-variance objective
+  # (which has no risk-aversion weight and no mean term). theta is set ONCE on the true parameters as
+  # theta = sqrt(trading_days)/S* in daily units (= 1/S* in annual units; S* = oracle max-Sharpe ratio), which makes the eps=0 oracle
+  # portfolio equal the oracle max-Sharpe portfolio. Same theta in every run.
+  theta_rule: "inverse_oracle_sharpe"
+  weights_match_tol: 1.0e-6    # oracle mean-variance vs oracle max-Sharpe weights
+  solver_tol: 1.0e-11          # convex-solver tolerance (gap and feasibility) for every DR mean-variance solve and the calibration check;
+                               # added after a first run showed the solver default (about 1e-8) leaves weight errors of 1e-6 to 1e-5
+  calibration_solver_tol: 1.0e-11   # tolerance for the oracle mean-variance check
+  # Sensitivity scenarios (reported, not tested). Each changes one thing relative to the primary scenario.
+  # ext_grid was added after a weights-only probe (no performance statistics) showed that with the mean term the
+  # 1/N plateau starts at eps of about 2 to 5, far above the pre-specified grid maximum (0.2154): it appends extra
+  # eps values to the same grid. The primary analysis (H1, H2) keeps the pre-specified grid unchanged.
+  sensitivity:
+    n_runs_sens: 200
+    scenarios:
+      - {name: "s1.0", mu_shrink_s: 1.0, dist: "t", T_list: [252], extra_eps: []}
+      - {name: "s0.0", mu_shrink_s: 0.0, dist: "t", T_list: [252], extra_eps: []}
+      - {name: "gaussian", mu_shrink_s: 0.5, dist: "gaussian", T_list: [252], extra_eps: []}
+      - {name: "ext_grid", mu_shrink_s: 0.5, dist: "t", T_list: [126, 252, 504], extra_eps: [0.5, 1.0, 2.0, 5.0, 10.0]}
+  bootstrap:
+    n_resamples: 10000
+    seed: 777
+    ci_level: 0.95
+  pilot: {runs: 10, T: 504}
+  n_jobs: 18
+  time_budget_hours: 2.0
+  checkpoint_dir: "outputs/cache/mc"      # one small file per (scenario, T, run); the job resumes from it
+  checks:
+    moment_n_days: 2000000     # large seeded simulation for the moment check
+    moment_z_tol: 5.0          # max |z| allowed (z = deviation / MC standard error)
+    oracle_tol: 1.0e-9
+    eps0_weight_tol: 1.0e-5    # eps=0 DR mean-variance vs plug-in mean-variance (own active-set solver)
+    wdro_objective_tol: 1.0e-7 # theta=0: objective value (daily units) of this study's solve vs src/wdro.py; the weights of that
+    wdro_weight_tol: 1.0e-4    # solver are only accurate to about 1e-5 (default tolerance), so weights are compared loosely
+    plateau_weight_tol: 1.0e-4
+    known_answer_tol: 1.0e-8
+    n_repro_pairs: 3
+    repro_tol: 1.0e-5          # re-run vs stored; solver noise (about 1e-6) can move a near-tied cross-validation choice, so a different
+                               # epsilon index passes only if the two out-of-fold Sharpe values differ by at most repro_tol
+    n_eps0_runs: 5
+  notes_path: "docs/montecarlo_notes.md"
+  output_suffix: "_mc"
