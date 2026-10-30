@@ -1,0 +1,12 @@
+numpy
+pandas
+scipy
+cvxpy
+matplotlib
+yfinance
+scikit-learn
+hmmlearn
+pyyaml
+pyarrow
+joblib
+pytest
