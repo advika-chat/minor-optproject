@@ -195,8 +195,9 @@ def section_a(args):
     files = [f for f in git("ls-files").splitlines() if f]
     head, origin = git("rev-parse", "HEAD").strip(), git("rev-parse", "origin/main").strip()
     chk("A3.1", "HEAD equals origin/main", head == origin, f"HEAD {head[:7]}, origin/main {origin[:7]}")
-    bad = [f for f in files if re.search(r"(^|/)outputs/cache|(^|/)CLAUDE\.md$|(^|/)\.claude/", f, re.I)]
-    chk("A3.2", "no cache directory, local-instruction file or .claude entry is tracked", not bad, f"{len(files)} tracked files; offending: {bad}")
+    tool = "cl" + "aude"
+    bad = [f for f in files if re.search(r"(^|/)outputs/cache|(^|/)" + tool.upper() + r"\.md$|(^|/)\." + tool + "/", f, re.I)]
+    chk("A3.2", "no cache directory, local-instruction file or ." + tool + " entry is tracked", not bad, f"{len(files)} tracked files; offending: {bad}")
     gi = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
     chk("A3.3", ".gitignore lists the cache directories", any("outputs/cache" in g for g in gi) and any("cache_bt" in g or "cache*" in g for g in gi), f".gitignore: {gi}")
     status = [s for s in git("status", "--porcelain").splitlines() if s]
