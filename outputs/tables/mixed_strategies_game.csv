@@ -1,0 +1,61 @@
+matrix,game,kind,name,value
+six_scenarios,payoff,value,investor_LP_value,0.4928628496018329
+six_scenarios,payoff,value,nature_LP_value,0.4928628496018329
+six_scenarios,payoff,value,gap,0.0
+six_scenarios,payoff,residual,row_gap (investor best response),0.0
+six_scenarios,payoff,residual,col_gap (Nature best response),0.0
+six_scenarios,payoff,bound,pure_maximin,0.4928628496018329
+six_scenarios,payoff,bound,pure_minimax,0.4928628496018329
+six_scenarios,payoff,strategy_investor,min_variance,0.0
+six_scenarios,payoff,strategy_investor,max_sharpe,1.0
+six_scenarios,payoff,strategy_investor,equal_weight,0.0
+six_scenarios,payoff,strategy_investor,frontier_50pct,0.0
+six_scenarios,payoff,strategy_nature,base,0.0
+six_scenarios,payoff,strategy_nature,bear,1.0
+six_scenarios,payoff,strategy_nature,bull,0.0
+six_scenarios,payoff,strategy_nature,high_volatility,0.0
+six_scenarios,payoff,strategy_nature,high_correlation,0.0
+six_scenarios,payoff,strategy_nature,rf_8pct,0.0
+six_scenarios,regret,value,investor_LP_value,0.0
+six_scenarios,regret,value,nature_LP_value,0.0
+six_scenarios,regret,value,gap,0.0
+six_scenarios,regret,residual,row_gap (investor best response),0.0
+six_scenarios,regret,residual,col_gap (Nature best response),0.0
+six_scenarios,regret,strategy_investor,min_variance,0.0
+six_scenarios,regret,strategy_investor,max_sharpe,1.0
+six_scenarios,regret,strategy_investor,equal_weight,0.0
+six_scenarios,regret,strategy_investor,frontier_50pct,0.0
+six_scenarios,regret,strategy_nature,base,1.0
+six_scenarios,regret,strategy_nature,bear,0.0
+six_scenarios,regret,strategy_nature,bull,0.0
+six_scenarios,regret,strategy_nature,high_volatility,0.0
+six_scenarios,regret,strategy_nature,high_correlation,0.0
+six_scenarios,regret,strategy_nature,rf_8pct,0.0
+eras,payoff,value,investor_LP_value,0.9352957565797472
+eras,payoff,value,nature_LP_value,0.9352957565797472
+eras,payoff,value,gap,0.0
+eras,payoff,residual,row_gap (investor best response),0.0
+eras,payoff,residual,col_gap (Nature best response),0.0
+eras,payoff,bound,pure_maximin,0.9352957565797472
+eras,payoff,bound,pure_minimax,0.9352957565797472
+eras,payoff,strategy_investor,min_variance,0.0
+eras,payoff,strategy_investor,max_sharpe,1.0
+eras,payoff,strategy_investor,equal_weight,0.0
+eras,payoff,strategy_investor,dr_meanvar_0.0046,0.0
+eras,payoff,strategy_investor,dr_meanvar_0.0464,0.0
+eras,payoff,strategy_nature,2015-2019,0.0
+eras,payoff,strategy_nature,2020-2022,0.0
+eras,payoff,strategy_nature,2023-end,1.0
+eras,regret,value,investor_LP_value,0.0
+eras,regret,value,nature_LP_value,0.0
+eras,regret,value,gap,0.0
+eras,regret,residual,row_gap (investor best response),0.0
+eras,regret,residual,col_gap (Nature best response),0.0
+eras,regret,strategy_investor,min_variance,0.0
+eras,regret,strategy_investor,max_sharpe,1.0
+eras,regret,strategy_investor,equal_weight,0.0
+eras,regret,strategy_investor,dr_meanvar_0.0046,0.0
+eras,regret,strategy_investor,dr_meanvar_0.0464,0.0
+eras,regret,strategy_nature,2015-2019,1.0
+eras,regret,strategy_nature,2020-2022,0.0
+eras,regret,strategy_nature,2023-end,0.0

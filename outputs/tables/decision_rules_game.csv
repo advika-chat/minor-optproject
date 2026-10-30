@@ -1,0 +1,5 @@
+matrix,rule,choice,criterion_value,same_choice_as_other_rule
+six_scenarios,wald_maximin_pure,max_sharpe,0.4928628496018329,True
+six_scenarios,savage_minimax_regret_pure,max_sharpe,0.0,True
+eras,wald_maximin_pure,max_sharpe,0.9352957565797472,True
+eras,savage_minimax_regret_pure,max_sharpe,0.0,True
