@@ -62,3 +62,53 @@ paths:
   figures_dir: "outputs/figures"
   tables_dir: "outputs/tables"
   results_log: "docs/results_log.md"
+
+# --- robust portfolio methods (src/robust.py) ---
+robust:
+  n_draws: 500                 # Michaud resampling draws
+  box_z: 1.0                   # ASSUMPTION: half-width of the mean box in standard errors
+  ellipsoid_confidence: 0.95   # chi-square quantile level that sets kappa
+  risk_aversion: 5.0           # ASSUMPTION: lambda in the ellipsoid mean-variance objective (annualised units)
+  cvar_min_return: null        # optional minimum annualised expected return for cvar_min
+  nonzero_threshold: 1.0e-4    # weights above this count as a position in demo tables
+
+# --- Wasserstein distributionally robust optimisation (src/wdro.py) ---
+wdro:
+  ground_norm: 1               # norm on return vectors for the ground metric: 1, 2 or "inf" (dual norm: inf, 2, 1)
+  eps_min: 1.0e-5              # Wasserstein radius grid, log-spaced, in daily-return units
+  eps_max: 1.0e-1
+  eps_points: 13
+  mean_weight: 0.0             # m in  m*E[-w'xi] + CVaR ; 0 = pure CVaR
+  min_return: null             # optional annualised minimum return (nominal for cvar, worst-case for meanvar)
+  top_positions_plot: 10       # positions shown in the stacked-area plot
+
+# --- regime detection (src/regimes.py) ---
+regimes:
+  vol_window: 21               # rolling realised-volatility window, trading days
+  vol_quantiles: [0.33, 0.67]  # ASSUMPTION: lower/upper expanding quantiles of past volatility
+  vol_min_history: 252         # past volatility observations required before labelling
+  hmm_min_history: 504         # returns required before the first HMM fit
+  hmm_refit_every: 21          # refit period, trading days
+  hmm_restarts: 5              # random restarts per fit (best likelihood kept)
+  hmm_max_iter: 200
+  hmm_tol: 1.0e-4
+
+# --- per-regime selection of the Wasserstein radius (src/eps_selection.py) ---
+eps_selection:
+  kind: "cvar"                 # wdro kind used in the validation blocks
+  block_length: 21             # validation block length, trading days
+  refit_every: 63              # how often the per-regime eps choice is refreshed, trading days
+  min_blocks: 6                # minimum validation blocks per regime, else fall back to the pooled eps
+  tie_tolerance: 1.0e-6        # Sharpe values within this of the best are ties, broken by lower realised CVaR
+  methods: ["vol_threshold", "hmm2", "hmm3"]
+
+# --- extended eps grid and selection rules (src/eps_selection.py, scripts/run_eps_selection.py) ---
+eps_selection_ext:
+  plateau_tolerance: 0.01      # the DR solution counts as 1/N when 1/sum(w^2) >= (1 - tolerance) * N in every training window
+  rules: ["best", "one_se"]    # best = highest net Sharpe; one_se = smallest eps within one jackknife SE of the best
+  output_suffix: "_ext"        # new result files carry this suffix; the original-grid results are kept
+  # grid = old wdro grid (13 log-spaced values 1e-5 .. 0.1) plus the points above it up to the first value at which
+  # every training window is 1/N within the tolerance (found by --find-grid: one extra point). Superset of the old grid.
+  eps_min: 1.0e-5
+  eps_max: 0.21544346900318845
+  eps_points: 14

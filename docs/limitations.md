@@ -141,3 +141,35 @@ Each flagged move was inspected with `python -m scripts.run_data --inspect TICKE
   now gone. The earlier first-run figures also had a few other index changes (BSE, INDIGO,
   MAXHEALTH, TMPV added) that do not reach the final universe because of history length
   or exclusion.
+
+## Regime detection: delay and flicker (2026-10-30)
+
+Regime labels (`src/regimes.py`) use data up to and including each date, so the label of date t can only drive the portfolio held from t+1. Any use of the label for the return earned on date t is look-ahead. All three methods are causal, and the shift tests in `tests/test_regimes.py` check that appending future data does not change earlier labels. Causal labels still lag, and the labels are noisy.
+
+Measured on one episode, the COVID crash (index peak 2020-01-14, first -10% from peak 2020-03-06, first -20% 2020-03-12, trough 2020-03-23, back within 10% of the peak 2020-07-21). Start and end of the continuous crisis spell that contains the trough:
+
+| Method | Spell starts | Start vs peak | Start vs first -10% day | Spell ends | End vs trough |
+|---|---|---|---|---|---|
+| vol_threshold | 2020-02-03 | +14 trading days | 23 days before | 2020-07-22 | +81 trading days |
+| hmm2 | 2020-02-24 | +28 | 9 days before | 2020-04-13 | +12 |
+| hmm3 | 2020-03-06 | +37 | on the -10% day | 2020-04-13 | +12 |
+
+Reading, with the limits of a single episode:
+- The volatility-threshold method flags crisis early only because volatility was already above its past 67th percentile in early 2020 (the figure shows frequent crisis labels in 2018 and 2019 as well). It stays in crisis for about four months after the trough, until the index has recovered, which is consistent with an expanding-quantile threshold and a 21-day window that stays elevated; I did not test that explanation separately.
+- The 3-state HMM flags crisis only once the index is already about 10% below its peak, and its crisis state is short-lived (mean spell 3.2 days, 125 crisis days in total), so it carries little information about sustained stress.
+- Labels flicker: the volatility method has 201 spells over 2,638 labelled days, hmm3 has 268 over 2,406. On the 2,406 days labelled by all three methods, vol_threshold and hmm3 agree exactly on 56.5% of days. On the calm / not-calm split the agreement is 82.4% (vol_threshold vs hmm3), 62.1% (hmm2 vs hmm3) and 56.7% (vol_threshold vs hmm2). Regime-dependent decisions will therefore depend strongly on the method chosen.
+- The first 252+21 days (volatility method) and 504 days (HMM) are unlabelled, so any regime-aware backtest has a shorter usable sample than the full data.
+- HMM fits are on benchmark returns only, with parameters refitted every 21 days. All 115 refits of each HMM converged on the best restart in this run; that is a result for this data, not a guarantee.
+
+## Eps grid extension and selection rules (2026-10-30)
+
+The eps grid was extended after observing edge solutions. In the first walk-forward run (13 log-spaced values, 1e-5 to 0.1) the pooled and several per-regime choices sat at the upper end of the grid. The extension was decided within the walk-forward cross-validation and before any backtest, and it does not use realised performance: the end point was found from the effective number of positions 1/sum(w^2) of the DR-CVaR weights in each of the 126 training windows (`scripts.run_eps_selection --find-grid`, table `outputs/tables/eps_grid_scan.csv`). At 0.1, 4 of 126 windows were still below 99% of N (minimum ratio 0.975); at the next log step, 0.2154, all windows were exactly 1/N. One value was therefore added. The new grid is a superset of the old one, and no values beyond 0.2154 were added because they would give the identical portfolio.
+
+The original-grid results are kept (`outputs/tables/eps_*` without suffix, and the earlier log entry). The extended results carry the suffix `_ext`. Restricting the extended run to the original grid reproduces the original selections; for hmm3, 4 of 168 rows differ in eps only through float-level ties (|Sharpe difference| at most 7.5e-8, below the 1e-6 tie tolerance), where the earlier tie-break picked an arbitrary one of numerically identical portfolios and the current one keeps the smallest eps.
+
+Selection rules, both reported. "best": highest net Sharpe (ties: lower CVaR, then smaller eps). "one_se": the smallest eps whose Sharpe is within one standard error of the best. The standard error is a leave-one-block-out jackknife of the pooled Sharpe over the validation blocks. It treats blocks as exchangeable units and ignores dependence between blocks, which may be autocorrelated (volatility clustering, regime persistence, overlapping 252-day training windows), so it is probably too small. It is the SE of one eps's Sharpe, not of a difference between two eps values.
+
+Limits of what this shows:
+- The jackknife SE of the best eps's Sharpe is between 0.38 and 1.28 across the regimes and methods on the all-blocks curves, which is as large as or larger than the Sharpe differences across most of the grid. The validation blocks therefore cannot separate most eps values, and the one-SE rule, which prefers the smallest eps within the band, selects very small eps in most cases by construction.
+- No significance test was run. The results do not show that a regime-dependent eps beats a fixed eps, or that any eps beats 1/N or the empirical (eps near 0) solution out of sample.
+- Several regimes have few blocks (hmm3 crisis: 9, hmm2 crisis: 17), so their per-regime choices are noisy and often fall back to the pooled eps.
