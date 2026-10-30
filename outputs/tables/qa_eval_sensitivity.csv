@@ -1,0 +1,7 @@
+method,start+0_rebalances,start+1_rebalances,start+2_rebalances,weights lagged one day,start+0_rebalances_rank,start+1_rebalances_rank,start+2_rebalances_rank,weights lagged one day_rank
+plugin_maxsharpe,0.74432,0.72752,0.71798,0.73904,3,3,3,4
+equal_weight,0.76801,0.75077,0.74451,0.76818,2,2,2,1
+drmsd_cv,0.72624,0.70828,0.70393,0.74026,4,4,4,3
+drcvar_cv,0.67936,0.66101,0.65393,0.66006,6,6,6,6
+drmsd_regime,0.68867,0.67061,0.66606,0.70858,5,5,5,5
+drcvar_regime,0.78904,0.77042,0.76367,0.76084,1,1,1,2

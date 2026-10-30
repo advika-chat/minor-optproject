@@ -1,0 +1,14 @@
+topic,keywords_present
+survivorship bias,True
+price index,True
+risk-free assumption,True
+cost model,True
+inner-window 252 vs 504 mismatch,True
+few crisis episodes,True
+HMM barely flags 2022,True
+theta calibrated on truth in MC / estimated in backtest,True
+truncated epsilon grid for DR-MSD,True
+bootstrap blocks exchangeable,True
+post-hoc tolerance changes,True
+excluded stocks,True
+unexamined data moves,True

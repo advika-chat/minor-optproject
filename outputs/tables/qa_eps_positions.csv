@@ -1,0 +1,9 @@
+series,share_at_grid_max,share_at_grid_min,distinct_values,median_index
+drcvar_cv_idx,0.0,0.0,2,12.0
+drmsd_cv_idx,0.7130434782608696,0.0,3,13.0
+drcvar_regime_idx,0.0,0.08695652173913043,5,12.0
+drmsd_regime_idx,0.6434782608695652,0.034782608695652174,7,13.0
+drcvar_1se_idx,0.0,0.9739130434782609,2,0.0
+drmsd_1se_idx,0.0,1.0,1,0.0
+drmsd_extcv_idx,0.7913043478260869,0.0,3,17.0
+drmsd_cvarblocks_idx,0.0,0.0,2,12.0

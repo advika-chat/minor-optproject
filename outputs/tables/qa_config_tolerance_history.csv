@@ -1,0 +1,85 @@
+commit_time,diff_line
+" -57,6 +57,51 @@ backtest:","+  start_position_min: 504      # first possible rebalance position: max(window_days, regimes_stress.hmm_min_history); the labelled-day chec"
+" -57,6 +57,51 @@ backtest:","+  theta_floor_sharpe: 0.25     # S_floor in theta_hat = sqrt(trading_days) / max(S_hat, S_floor)"
+" -57,6 +57,51 @@ backtest:",+  solver_tol: 1.0e-11          # tolerance of the convex-solver calls made by this backtest for DR-MSD (set tight up front)
+" -57,6 +57,51 @@ backtest:","+  checks:                      # tolerances for the script's checks, fixed before running"
+" -57,6 +57,51 @@ backtest:",+    weight_sum_tol: 1.0e-8
+" -57,6 +57,51 @@ backtest:",+    cap_tol: 1.0e-8
+" -57,6 +57,51 @@ backtest:",+    lookahead_weight_tol: 1.0e-5          # stored weights vs weights recomputed with data from t on zeroed. CHANGED from 1e-6 after the fi
+" -57,6 +57,51 @@ backtest:",+    cost_tol: 1.0e-12
+" -57,6 +57,51 @@ backtest:",+    turnover_tol: 1.0e-9
+" -57,6 +57,51 @@ backtest:",+    eps0_cvar_value_tol: 1.0e-7           # DR-CVaR at eps=0 vs plug-in CVaR LP: the CVaR VALUES must agree (weights of an LP need not be u
+" -57,6 +57,51 @@ backtest:",+    eps0_msd_weight_tol: 1.0e-5           # DR-MSD at eps=0 vs the same objective solved as a QP at its own return with the own active-set 
+" -57,6 +57,51 @@ backtest:",+    plateau_eps: 0.21544346900318845      # DR-CVaR at this epsilon must be 1/N up to eps_selection_ext.plateau_tolerance (effective N rati
+" -57,6 +57,51 @@ backtest:","+    one_over_n_turnover_max: 0.10         # mean turnover of 1/N per rebalance must lie in (0, this]. CHANGED from 0.05 (an arbitrary guess"
+" -57,6 +57,51 @@ backtest:",+    repro_tol: 1.0e-5                     # CHANGED from 1e-6 after the first run (same reason as lookahead_weight_tol; observed 1.8e-6)
+" -57,6 +57,51 @@ backtest:",+    eps_near_tie_tol: 1.0e-5              # a re-run may pick a neighbouring epsilon only if the two out-of-fold criteria differ by at most
+" -267,3 +267,66 @@ game:","+  # theta = sqrt(trading_days)/S* in daily units (= 1/S* in annual units; S* = oracle max-Sharpe ratio), which makes the eps=0 oracle"
+" -267,3 +267,66 @@ game:",+  # portfolio equal the oracle max-Sharpe portfolio. Same theta in every run.
+" -267,3 +267,66 @@ game:",+  weights_match_tol: 1.0e-6    # oracle mean-variance vs oracle max-Sharpe weights
+" -267,3 +267,66 @@ game:",+  solver_tol: 1.0e-11          # convex-solver tolerance (gap and feasibility) for every DR mean-variance solve and the calibration check;
+" -267,3 +267,66 @@ game:",+  calibration_solver_tol: 1.0e-11   # tolerance for the oracle mean-variance check
+" -267,3 +267,66 @@ game:",+    moment_z_tol: 5.0          # max |z| allowed (z = deviation / MC standard error)
+" -267,3 +267,66 @@ game:",+    oracle_tol: 1.0e-9
+" -267,3 +267,66 @@ game:",+    eps0_weight_tol: 1.0e-5    # eps=0 DR mean-variance vs plug-in mean-variance (own active-set solver)
+" -267,3 +267,66 @@ game:",+    wdro_objective_tol: 1.0e-7 # theta=0: objective value (daily units) of this study's solve vs src/wdro.py; the weights of that
+" -267,3 +267,66 @@ game:","+    wdro_weight_tol: 1.0e-4    # solver are only accurate to about 1e-5 (default tolerance), so weights are compared loosely"
+" -267,3 +267,66 @@ game:",+    plateau_weight_tol: 1.0e-4
+" -267,3 +267,66 @@ game:",+    known_answer_tol: 1.0e-8
+" -267,3 +267,66 @@ game:","+    repro_tol: 1.0e-5          # re-run vs stored; solver noise (about 1e-6) can move a near-tied cross-validation choice, so a different"
+" -267,3 +267,66 @@ game:",+                               # epsilon index passes only if the two out-of-fold Sharpe values differ by at most repro_tol
+" -136,3 +136,134 @@ regimes_stress:","+# --- own active-set QP solver, golden-section max-Sharpe, KKT report (src/solver_own.py, scripts/run_solver_own.py) ---"
+" -136,3 +136,134 @@ regimes_stress:","+  kkt_residual_tol: 1.0e-8         # stationarity, primal feasibility, dual feasibility, complementary slackness (absolute)"
+" -136,3 +136,134 @@ regimes_stress:",+  active_set_step_tol: 1.0e-12     # a step with max-norm below this counts as zero
+" -136,3 +136,134 @@ regimes_stress:",+  feasibility_tol: 1.0e-10         # bound / equality violations and target-range slack
+" -136,3 +136,134 @@ regimes_stress:",+  dual_tol: 1.0e-10                # multipliers above -dual_tol count as non-negative
+" -136,3 +136,134 @@ regimes_stress:",+  golden_section_tol: 1.0e-10      # bracket width in annualised-return units
+" -136,3 +136,134 @@ regimes_stress:",+  unimodality_noise_tol: 1.0e-12   # Sharpe differences below this are treated as flat
+" -136,3 +136,134 @@ regimes_stress:","+  kkt_target_fractions: [0.25, 0.5, 0.75]   # target returns as fractions of [min-variance return, max achievable return]"
+" -136,3 +136,134 @@ regimes_stress:",+  fd_rel_tol: 1.0e-4               # agreement required between finite differences and multipliers
+" -136,3 +136,134 @@ regimes_stress:",+  tangency_rel_tol: 1.0e-5         # at max-Sharpe the return multiplier should equal 2 V / (r - rf)
+" -136,3 +136,134 @@ regimes_stress:",+  random_n_max: 40
+" -136,3 +136,134 @@ regimes_stress:",+  agree_weight_tol: 1.0e-5         # max absolute weight difference against cvxpy
+" -136,3 +136,134 @@ regimes_stress:",+  agree_objective_rel_tol: 1.0e-7  # relative objective difference against cvxpy
+" -136,3 +136,134 @@ regimes_stress:","+  edge_objective_rel_tol: 1.0e-6   # objective agreement for the edge cases (near-singular, duplicated asset)"
+" -136,3 +136,134 @@ regimes_stress:",+  regression_weight_tol: 1.0e-4    # own versus src/markowitz.py weights on the real data
+" -136,3 +136,134 @@ regimes_stress:",+  regression_tol_return_vol: 1.0e-4   # versus the previously logged in-sample numbers (reported to 4 decimals)
+" -136,3 +136,134 @@ regimes_stress:",+  regression_tol_sharpe: 1.0e-3       # (reported to 3 decimals)
+" -136,3 +136,134 @@ regimes_stress:",+  # tolerance passed to the cvxpy/Clarabel reference solves (gap and feasibility). Clarabel's default of 1e-8 is an ABSOLUTE
+" -136,3 +136,134 @@ regimes_stress:",+  # conditions to about 1e-15 while the default-tolerance reference was slightly suboptimal (differences shrink as this is tightened).
+" -136,3 +136,134 @@ regimes_stress:",+  cvxpy_solver_tol: 1.0e-12
+" -136,3 +136,134 @@ regimes_stress:","+  fd_abs_floor: 1.0e-8             # finite-difference noise floor: agreement is |fd - predicted| <= fd_rel_tol * max(|fd|, |predicted|) + "
+" -136,3 +136,134 @@ regimes_stress:",+  projected_gradient_tol: 1.0e-11  # a working set is stationary when the max-norm of the gradient projected on the free variables (g_F - A
+" -136,3 +136,134 @@ regimes_stress:","+  # feasibility tolerance 1e-12), so a RELATIVE objective comparison is meaningless there. That case is checked instead by"
+" -136,3 +136,134 @@ regimes_stress:",+  near_singular_scaled_abs_tol: 1.0e-9
+" -136,3 +136,134 @@ regimes_stress:","+  crosscheck_weight_tol: 1.0e-5    # max |weight difference|, own QP versus cvxpy equality-target solve at the same target return"
+" -136,3 +136,134 @@ regimes_stress:",+  crosscheck_sharpe_tol: 1.0e-5    # |own max-Sharpe - cvxpy max-Sharpe| (cvxpy at its default tolerance)
+" -136,3 +136,134 @@ regimes_stress:","+  frontier_fraction: 0.5           # the frontier portfolio used in the scenario table: this fraction of [min-variance return, max achievab"
+" -136,3 +136,134 @@ regimes_stress:",+  psd_tol: 1.0e-10                 # smallest eigenvalue must exceed -psd_tol * largest eigenvalue
+" -136,3 +136,134 @@ regimes_stress:",+  monotone_tol: 1.0e-12            # optimal variance must not increase with the cap by more than this
+" -136,3 +136,134 @@ regimes_stress:",+  min_variance_invariance_tol: 1.0e-12   # max L1 change of min-variance weights under mu perturbation
+" -136,3 +136,134 @@ regimes_stress:",+  zero_perturbation_tol: 1.0e-12
+" -136,3 +136,134 @@ regimes_stress:",+    strong_gap_tol: 1.0e-9         # |dual - primal| at the solver's multipliers
+" -136,3 +136,134 @@ regimes_stress:",+    weak_duality_tol: 1.0e-12      # dual value may exceed the primal optimum by at most this
+" -136,3 +136,134 @@ regimes_stress:",+    complementary_tol: 1.0e-9
+" -136,3 +136,134 @@ regimes_stress:","+  six_scenario_table: ""outputs/tables/scenario_sharpe_matrix_sens.csv""   # saved Sharpe matrix of the sensitivity task (degenerate: max-Sha"
+" -136,3 +136,134 @@ regimes_stress:",+  # tolerances
+" -136,3 +136,134 @@ regimes_stress:",+  lp_value_tol: 1.0e-9                     # |investor LP value - Nature LP value|
+" -136,3 +136,134 @@ regimes_stress:",+  best_response_tol: 1.0e-8                # residuals of the best-response checks for mixed strategies
+" -136,3 +136,134 @@ regimes_stress:",+  ellipsoid_value_tol: 1.0e-7              # max-min value versus min-max value (own engine versus cvxpy)
+" -136,3 +136,134 @@ regimes_stress:",+  ellipsoid_weight_tol: 1.0e-4             # own saddle weights versus the SOCP of src/robust.py. Raised from 1e-5 after a test showed diff
+" -136,3 +136,134 @@ regimes_stress:",+                                           # SOCP's by 2e-10 and equal to the independent min-max to 1e-13: the SOCP runs at the solver's d
+" -136,3 +136,134 @@ regimes_stress:",+  ellipsoid_residual_tol: 1.0e-6           # saddle residuals (best-response gaps)
+" -136,3 +136,134 @@ regimes_stress:",+  ellipsoid_boundary_tol: 1.0e-9           # mu* must lie on the ellipsoid boundary
+" -136,3 +136,134 @@ regimes_stress:",+  golden_tol: 1.0e-12                      # golden-section tolerances inside the own-engine saddle solver
+" -136,3 +136,134 @@ regimes_stress:","+  wasserstein_bound_tol: 1.0e-7            # relative gap below which lower and upper bound count as equal (reported, not a pass/fail crite"
+" -136,3 +136,134 @@ regimes_stress:",+  wasserstein_budget_tol: 1.0e-12          # transport cost of the constructed distribution may exceed eps by at most this (relative)
+" -112,3 +112,27 @@ eps_selection_ext:",+  hmm_tol: 1.0e-4
+" -62,3 +62,53 @@ paths:",+  eps_max: 1.0e-1
+" -62,3 +62,53 @@ paths:",+  hmm_tol: 1.0e-4
+" -62,3 +62,53 @@ paths:","+  min_blocks: 6                # minimum validation blocks per regime, else fall back to the pooled eps"
+" -62,3 +62,53 @@ paths:","+  tie_tolerance: 1.0e-6        # Sharpe values within this of the best are ties, broken by lower realised CVaR"
+" -62,3 +62,53 @@ paths:",+  plateau_tolerance: 0.01      # the DR solution counts as 1/N when 1/sum(w^2) >= (1 - tolerance) * N in every training window
+" -62,3 +62,53 @@ paths:",+  # every training window is 1/N within the tolerance (found by --find-grid: one extra point). Superset of the old grid.
+" -62,3 +62,53 @@ paths:",+  eps_max: 0.21544346900318845
+" -0,0 +1,53 @@",+  weight_cap: 0.10          # max weight per asset

@@ -1,0 +1,5 @@
+table,comparisons,exclude_zero,status
+backtest_bootstrap_bt,36,10,descriptive (not pre-specified as tests)
+h1_secondary_bt,4,2,H1 secondary (primary comparison)
+sensitivities_bt (vs_plugin),12,0,sensitivity (exploratory)
+sensitivities_bt (vs_equal_weight),13,0,sensitivity (exploratory)

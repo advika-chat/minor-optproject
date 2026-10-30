@@ -1,0 +1,16 @@
+path,first_commit,first_commit_time
+config.yaml,16ebf3e,2026-10-30T11:50:47+05:30
+docs/hypotheses.md,058b232,2026-10-30T22:11:14+05:30
+docs/backtest_spec.md,ee4211b,2026-10-30T23:42:38+05:30
+docs/montecarlo_notes.md,058b232,2026-10-30T22:11:14+05:30
+docs/backtest_notes.md,ee4211b,2026-10-30T23:42:38+05:30
+outputs/tables/mc_runs_mc.csv,058b232,2026-10-30T22:11:14+05:30
+outputs/tables/mc_h1_mc.csv,058b232,2026-10-30T22:11:14+05:30
+outputs/tables/mc_h2_mc.csv,058b232,2026-10-30T22:11:14+05:30
+outputs/tables/backtest_summary_bt.csv,ee4211b,2026-10-30T23:42:38+05:30
+outputs/tables/daily_returns_bt.csv,ee4211b,2026-10-30T23:42:38+05:30
+outputs/tables/backtest_bootstrap_bt.csv,ee4211b,2026-10-30T23:42:38+05:30
+src/montecarlo.py,cd01135,2026-10-30T12:16:08+05:30
+src/backtest.py,cd01135,2026-10-30T12:16:08+05:30
+config montecarlo section,058b232,2026-10-30T22:11:14+05:30
+config backtest pre-specification,ee4211b,2026-10-30T23:42:38+05:30

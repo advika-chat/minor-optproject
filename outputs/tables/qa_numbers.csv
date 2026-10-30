@@ -1,0 +1,171 @@
+section,number,value,unit,source,reproduced
+A,tests passed,232,count,pytest,yes
+B,number of stocks,40,count,data/processed/returns_simple.parquet,yes
+B,trading days (benchmark calendar),2911,days,data/processed/benchmark.parquet,yes
+B,return rows,2910,days,data/processed/returns_simple.parquet,yes
+B,daily moves beyond +-20%,6,count,outputs/tables/data_flagged_jumps.csv,yes
+B,excluded tickers,3,count,config.yaml data.excluded_tickers,yes
+B,short-history tickers dropped,7,count,outputs/tables/data_dropped_tickers.csv,yes
+B,SBIN.NS return on 2017-10-25,0.2768716762757961,daily simple return,data/processed/returns_simple.parquet,yes
+B,ADANIPORTS.NS return on 2024-06-04,-0.21149656882255286,daily simple return,data/processed/returns_simple.parquet,yes
+B,NIFTY 50 price index return,0.10018743879325145,annualised,data/processed/benchmark.parquet,yes
+B,NIFTY 50 price index vol,0.16152387907984567,annualised,data/processed/benchmark.parquet,yes
+B,NIFTY 50 price index sharpe,0.21784666758688565,ratio,data/processed/benchmark.parquet,yes
+B,NIFTY 50 price index skew,-0.9945730097650163,ratio,data/processed/benchmark.parquet,yes
+B,NIFTY 50 price index excess kurtosis,16.95239280664338,ratio,data/processed/benchmark.parquet,yes
+B,1/N in-sample return,0.17773851979789776,annualised,outputs/tables/markowitz_insample_summary.csv,yes
+B,1/N in-sample vol,0.16170101416266525,annualised,outputs/tables/markowitz_insample_summary.csv,yes
+B,1/N in-sample sharpe,0.6972035418682468,ratio,outputs/tables/markowitz_insample_summary.csv,yes
+B,median single-stock volatility,0.28411464501461936,annualised,data/processed/returns_simple.parquet,yes
+C,min-variance annualised return,0.13225527863660055,annualised,outputs/tables/markowitz_insample_summary.csv,yes
+C,min-variance annualised volatility,0.12924815989833122,annualised,outputs/tables/markowitz_insample_summary.csv,yes
+C,min-variance Sharpe,0.5203577264814035,ratio,outputs/tables/markowitz_insample_summary.csv,yes
+C,max-Sharpe annualised return,0.2377263729123214,annualised,outputs/tables/markowitz_insample_summary.csv,yes
+C,max-Sharpe annualised volatility,0.17185512519097448,annualised,outputs/tables/markowitz_insample_summary.csv,yes
+C,max-Sharpe Sharpe,1.0050696638833363,ratio,outputs/tables/markowitz_insample_summary.csv,yes
+C,"budget multiplier at max-Sharpe (lam, dV*/d budget, V = w'Sigma w)",-0.017941965743847745,variance per unit of capital,"outputs/tables/kkt_report_own.csv (solution max_sharpe, constraint budget)",yes
+C,return-target multiplier at max-Sharpe (gam = dV*/dr),0.3419765612753975,variance per unit of return,outputs/tables/kkt_report_own.csv,yes
+C,cap shadow price at max-Sharpe (sum of beta = -dV*/dcap),0.04286513267795934,variance per unit of cap,outputs/tables/kkt_report_own.csv,yes (computed from the weights)
+D,H1 mean difference in true Sharpe at T = 252 (DRO CV minus plug-in),-0.004894911845564377,Sharpe units,outputs/tables/mc_h1_mc.csv,yes
+D,H1 interval lower,-0.007228365129390421,Sharpe units,outputs/tables/mc_h1_mc.csv,"yes (new seed, within tolerance)"
+D,H1 interval upper,-0.002477444988510765,Sharpe units,outputs/tables/mc_h1_mc.csv,"yes (new seed, within tolerance)"
+D,Delta(126),-0.007909626009151776,Sharpe units,outputs/tables/mc_h2_mc.csv,yes
+D,Delta(504),8.483123146427251e-05,Sharpe units,outputs/tables/mc_h2_mc.csv,yes
+D,H2 difference in differences,-0.007994457240616048,Sharpe units,outputs/tables/mc_h2_mc.csv,yes
+D,H2 interval lower,-0.011583980701904507,Sharpe units,outputs/tables/mc_h2_mc.csv,"yes (new seed, within tolerance)"
+D,H2 interval upper,-0.004370085129455939,Sharpe units,outputs/tables/mc_h2_mc.csv,"yes (new seed, within tolerance)"
+D,ablation T=126: DRO (CV epsilon) minus DRO epsilon=0,0.00879586395071108,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=126: DRO (CV epsilon) minus 1/N,-0.03774369938677493,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=126: DRO epsilon=0 minus plug-in max-Sharpe,-0.016705489959862853,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=252: DRO (CV epsilon) minus DRO epsilon=0,0.012676926457357024,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=252: DRO (CV epsilon) minus 1/N,-0.02549780382297771,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=252: DRO epsilon=0 minus plug-in max-Sharpe,-0.0175718383029214,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=504: DRO (CV epsilon) minus DRO epsilon=0,0.015669298880724148,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=504: DRO (CV epsilon) minus 1/N,-0.014312839382625463,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+D,ablation T=504: DRO epsilon=0 minus plug-in max-Sharpe,-0.015584467649259874,Sharpe units,outputs/tables/mc_ablation_mc.csv,yes
+E,"drmsd_cv minus plugin_maxsharpe, cvar95_daily: estimate",-0.0017989188982630022,daily loss units,outputs/tables/h1_secondary_bt.csv,yes
+E,"drmsd_cv minus plugin_maxsharpe, cvar95_daily: 95% interval","[-0.00298, -0.00058]",same,outputs/tables/h1_secondary_bt.csv,"yes (own [-0.00299, -0.00063])"
+E,"drmsd_cv minus plugin_maxsharpe, max_drawdown: estimate",-0.025454143221684933,fraction,outputs/tables/h1_secondary_bt.csv,yes
+E,"drmsd_cv minus plugin_maxsharpe, max_drawdown: 95% interval","[-0.04909, 0.09894]",same,outputs/tables/h1_secondary_bt.csv,"yes (own [-0.05400, 0.10678])"
+E,"drcvar_cv minus plugin_maxsharpe, cvar95_daily: estimate",-0.0016563722373577373,daily loss units,outputs/tables/h1_secondary_bt.csv,yes
+E,"drcvar_cv minus plugin_maxsharpe, cvar95_daily: 95% interval","[-0.00298, -0.00020]",same,outputs/tables/h1_secondary_bt.csv,"yes (own [-0.00303, -0.00021])"
+E,"drcvar_cv minus plugin_maxsharpe, max_drawdown: estimate",-0.05133677812205806,fraction,outputs/tables/h1_secondary_bt.csv,yes
+E,"drcvar_cv minus plugin_maxsharpe, max_drawdown: 95% interval","[-0.08738, 0.10645]",same,outputs/tables/h1_secondary_bt.csv,"yes (own [-0.09279, 0.11360])"
+E,covid_2020 equal_weight cumulative return,-0.16091675518605897,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,covid_2020 equal_weight CVaR95,0.09258062039730222,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,covid_2020 plugin_maxsharpe cumulative return,-0.09522824340904879,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,covid_2020 plugin_maxsharpe CVaR95,0.08023826385395462,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,covid_2020 drmsd_cv cumulative return,-0.13892693678079093,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,covid_2020 drmsd_cv CVaR95,0.08557784391949254,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,covid_2020 drcvar_cv cumulative return,-0.14696410520808278,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,covid_2020 drcvar_cv CVaR95,0.0925806203972776,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 equal_weight cumulative return,0.12016996952683123,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 equal_weight CVaR95,0.024968480300624193,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 plugin_maxsharpe cumulative return,-0.04703447155237017,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 plugin_maxsharpe CVaR95,0.0273627137152125,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 drmsd_cv cumulative return,0.09340228778466653,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 drmsd_cv CVaR95,0.024731524869013012,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 drcvar_cv cumulative return,0.1201699695278724,fraction,outputs/tables/stress_windows_bt.csv,yes
+E,year_2022 drcvar_cv CVaR95,0.024968480300064835,daily loss,outputs/tables/stress_windows_bt.csv,yes
+E,share of rebalances at the grid maximum: drcvar_cv_idx,0.0,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,share of rebalances at the grid maximum: drmsd_cv_idx,0.7130434782608696,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,share of rebalances at the grid maximum: drcvar_regime_idx,0.0,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,share of rebalances at the grid maximum: drmsd_regime_idx,0.6434782608695652,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,share of rebalances at the grid maximum: drcvar_1se_idx,0.0,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,share of rebalances at the grid maximum: drmsd_1se_idx,0.0,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,share of rebalances at the grid maximum: drmsd_extcv_idx,0.7913043478260869,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,share of rebalances at the grid maximum: drmsd_cvarblocks_idx,0.0,share,outputs/tables/chosen_epsilon_over_time_bt.csv,yes
+E,equal_weight sharpe,0.7680136212265058,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight ann_return,0.1890659514296926,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight cagr,0.1922690370565745,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight ann_vol,0.16154134249801608,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight max_drawdown,-0.3627686243098184,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight cvar95_daily,0.023616269166324734,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight calmar,0.5300045929340608,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight avg_turnover,0.05180478284887447,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,yes
+E,equal_weight avg_effective_n,39.99999999999999,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,equal_weight total_cost,0.006905745244771691,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe sharpe,0.7443215961723241,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe ann_return,0.19028841502143684,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe cagr,0.19244282907143972,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe ann_vol,0.16832564803403915,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe max_drawdown,-0.3114318461876344,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe cvar95_daily,0.024216423045212005,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe calmar,0.6179291919795991,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe avg_turnover,0.3205679085109272,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_maxsharpe avg_effective_n,11.28489306096788,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,plugin_maxsharpe total_cost,0.03754474157024569,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar sharpe,0.6200034562901998,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar ann_return,0.14677834205717577,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar cagr,0.14799923415308247,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar ann_vol,0.131899816408279,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar max_drawdown,-0.26958255101602724,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar cvar95_daily,0.018292230306606327,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar calmar,0.5489941155141143,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar avg_turnover,0.1304379366007578,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,yes
+E,plugin_minvar avg_effective_n,13.829032507065204,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,plugin_minvar total_cost,0.01586992477248639,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv sharpe,0.7262360792208293,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv ann_return,0.1779181744232186,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv cagr,0.1802317818569783,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv ann_vol,0.15548411550190028,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv max_drawdown,-0.33688598940931935,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv cvar95_daily,0.022417504146949003,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv calmar,0.5349934028808635,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv avg_turnover,0.17722029392519484,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_cv avg_effective_n,29.595903023189077,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,drmsd_cv total_cost,0.02120311350747221,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv sharpe,0.6793635930825586,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv ann_return,0.1716283726543196,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv cagr,0.17253439724176567,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv ann_vol,0.15695332181476163,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv max_drawdown,-0.3627686243096925,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv cvar95_daily,0.022560050807854268,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv calmar,0.4756045194649318,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv avg_turnover,0.07637278394616215,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_cv avg_effective_n,37.967683962340004,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,drcvar_cv total_cost,0.009706497369862486,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime sharpe,0.6886713679113305,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime ann_return,0.17264892922722566,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime cagr,0.17388178503946827,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime ann_vol,0.15631393178681696,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime max_drawdown,-0.33688598940931924,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime cvar95_daily,0.022534671755242843,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime calmar,0.516144305509246,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime avg_turnover,0.24316273455350607,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,yes
+E,drmsd_regime avg_effective_n,28.568219351294424,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,drmsd_regime total_cost,0.02872055173909969,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime sharpe,0.7890444685320366,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime ann_return,0.1832653135968806,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime cagr,0.18760790396446803,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime ann_vol,0.14988421858771175,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime max_drawdown,-0.2978076873646983,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime cvar95_daily,0.02154554330321192,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime calmar,0.629963267988853,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime avg_turnover,0.22125908660300406,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,yes
+E,drcvar_regime avg_effective_n,34.63041862964668,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,drcvar_regime total_cost,0.02622353587274246,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index sharpe,0.3141708295880233,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index ann_return,0.11611104525664297,annualised (mean x 252),outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index cagr,0.10821993984589406,annualised (geometric),outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index ann_vol,0.16268552151600327,annualised,outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index max_drawdown,-0.3843985245274212,fraction,outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index cvar95_daily,0.023743454240033098,daily loss,outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index calmar,0.28153058074023424,ratio,outputs/tables/backtest_summary_bt.csv,yes
+E,nifty_price_index avg_turnover,,sum |dw| per rebalance,outputs/tables/backtest_summary_bt.csv,no
+E,nifty_price_index avg_effective_n,,1/sum w^2,outputs/tables/backtest_summary_bt.csv,no
+E,nifty_price_index total_cost,0.0,fraction of wealth (sum of per-rebalance costs),outputs/tables/backtest_summary_bt.csv,no
+G,era Sharpe min_variance 2015-2019,0.4923541153316943,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe min_variance 2020-2022,0.8362436118618198,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe min_variance 2023-end,0.2028492532352813,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe max_sharpe 2015-2019,1.0348577911662749,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe max_sharpe 2020-2022,1.097092766539083,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe max_sharpe 2023-end,0.9352957068385193,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe equal_weight 2015-2019,0.5497474124911386,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe equal_weight 2020-2022,0.8924117382738312,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,era Sharpe equal_weight 2023-end,0.7186728951403629,ratio (in-sample for the era),docs/results_log.md (game entry); outputs/tables/payoff_matrices_game.csv,yes
+G,empirical daily CVaR95 of 1/N (in-sample),0.023607847679331957,daily loss,docs/results_log.md (game entry),yes
+G,"ellipsoid game saddle value, kappa 0.0",0.16419442579705765,payoff units,docs/results_log.md (game entry); outputs/tables/ellipsoid_saddle_game.csv,yes
+G,"ellipsoid game saddle value, kappa 0.5",0.13860457761506678,payoff units,docs/results_log.md (game entry); outputs/tables/ellipsoid_saddle_game.csv,yes
+G,"ellipsoid game saddle value, kappa 1.0",0.11359473391919267,payoff units,docs/results_log.md (game entry); outputs/tables/ellipsoid_saddle_game.csv,yes
+G,"ellipsoid game saddle value, kappa 2.0",0.06484396900957123,payoff units,docs/results_log.md (game entry); outputs/tables/ellipsoid_saddle_game.csv,yes
