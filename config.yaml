@@ -136,3 +136,134 @@ regimes_stress:
     year_2022: ["2022-01-01", "2022-12-31"]
   verify_positions: [700, 1200]        # saved hmm2 probabilities are checked against truncated recomputations at these row positions
   output_suffix: "_2reg"
+
+# --- own active-set QP solver, golden-section max-Sharpe, KKT report (src/solver_own.py, scripts/run_solver_own.py) ---
+# Cap, risk-free rate and annualisation come from portfolio.weight_cap, risk_free_rate and trading_days.
+solver_own:
+  seed: 7                          # random synthetic problems
+  kkt_residual_tol: 1.0e-8         # stationarity, primal feasibility, dual feasibility, complementary slackness (absolute)
+  active_set_step_tol: 1.0e-12     # a step with max-norm below this counts as zero
+  feasibility_tol: 1.0e-10         # bound / equality violations and target-range slack
+  dual_tol: 1.0e-10                # multipliers above -dual_tol count as non-negative
+  max_iterations: 1000
+  cycle_guard_zero_steps: 25       # consecutive zero-length steps before switching to Bland's rule for dropping constraints
+  frontier_points: 50
+  golden_section_tol: 1.0e-10      # bracket width in annualised-return units
+  unimodality_grid_points: 1000    # fine grid used to verify that the Sharpe ratio is unimodal along the frontier
+  unimodality_noise_tol: 1.0e-12   # Sharpe differences below this are treated as flat
+  kkt_target_fractions: [0.25, 0.5, 0.75]   # target returns as fractions of [min-variance return, max achievable return]
+  fd_relative_step: 1.0e-6         # finite-difference step for multiplier sensitivities (relative to the perturbed quantity's scale)
+  fd_rel_tol: 1.0e-4               # agreement required between finite differences and multipliers
+  tangency_rel_tol: 1.0e-5         # at max-Sharpe the return multiplier should equal 2 V / (r - rf)
+  random_problems: 200             # random PSD problems checked against cvxpy
+  random_n_min: 3
+  random_n_max: 40
+  random_ridge_range: [1.0e-4, 1.0e-1]      # diagonal ridge added to the random covariance (log-uniform)
+  agree_weight_tol: 1.0e-5         # max absolute weight difference against cvxpy
+  agree_objective_rel_tol: 1.0e-7  # relative objective difference against cvxpy
+  edge_objective_rel_tol: 1.0e-6   # objective agreement for the edge cases (near-singular, duplicated asset)
+  regression_weight_tol: 1.0e-4    # own versus src/markowitz.py weights on the real data
+  regression_tol_return_vol: 1.0e-4   # versus the previously logged in-sample numbers (reported to 4 decimals)
+  regression_tol_sharpe: 1.0e-3       # (reported to 3 decimals)
+  regression_reference:            # from the logged final-data Markowitz entry (cap 0.10, rf 0.065, 40 assets)
+    min_variance: {ret: 0.1323, vol: 0.1292, sharpe: 0.520}
+    max_sharpe: {ret: 0.2377, vol: 0.1719, sharpe: 1.005}
+  output_suffix: "_own"
+  # tolerance passed to the cvxpy/Clarabel reference solves (gap and feasibility). Clarabel's default of 1e-8 is an ABSOLUTE
+  # gap, which is coarse for problems whose optimal variance is about 1e-5; a smoke test showed the own solver satisfying the KKT
+  # conditions to about 1e-15 while the default-tolerance reference was slightly suboptimal (differences shrink as this is tightened).
+  # The agreement thresholds above are NOT changed.
+  cvxpy_solver_tol: 1.0e-12
+  fd_abs_floor: 1.0e-8             # finite-difference noise floor: agreement is |fd - predicted| <= fd_rel_tol * max(|fd|, |predicted|) + fd_abs_floor
+  projected_gradient_tol: 1.0e-11  # a working set is stationary when the max-norm of the gradient projected on the free variables (g_F - A_F' nu) is below this;
+                                   # scale-aware, unlike the Newton step, which is noisy when Sigma is nearly singular
+  # near-singular covariance: the optimal variance is about 1e-12, below the absolute resolution of the reference solver (gap and
+  # feasibility tolerance 1e-12), so a RELATIVE objective comparison is meaningless there. That case is checked instead by
+  # |own - cvxpy| <= this * mean(diag Sigma), together with own <= cvxpy + the same bound and the own KKT residuals. Decided after the first
+  # check failed on the relative metric (the own solution was KKT-exact and lower than the reference).
+  near_singular_scaled_abs_tol: 1.0e-9
+
+# --- sensitivity analysis, KKT and duality (src/sensitivity.py, src/duality.py, scripts/run_sensitivity.py) ---
+# Base cap and rf come from portfolio.weight_cap and risk_free_rate; the QP engine is src/solver_own.py (solver_own section).
+sensitivity:
+  seed: 11
+  n_draws: 1000                    # the earlier 220 came from a run-time budget (about 10 minutes at 2.24 s per draw), not from statistical need; 1000 draws take about 40 minutes
+  bootstrap_resamples: 1000        # seeded bootstrap over the draws: standard error and 95% percentile interval of the headline statistics
+  bootstrap_seed: 23
+  k_multipliers: [0.25, 0.5, 1.0]  # mu_tilde ~ N(mu_hat, k^2 * Sigma_ann / years)
+  crosscheck_draws: 20             # draws per k re-solved with cvxpy
+  crosscheck_weight_tol: 1.0e-5    # max |weight difference|, own QP versus cvxpy equality-target solve at the same target return
+  crosscheck_sharpe_tol: 1.0e-5    # |own max-Sharpe - cvxpy max-Sharpe| (cvxpy at its default tolerance)
+  position_threshold: 1.0e-4       # weights above this count as a position
+  one_asset_top: 5                 # most sensitive assets listed
+  shrinkage_grid: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]   # blend toward the target; targets: scaled identity, constant correlation
+  vol_scale_grid: [0.8, 1.0, 1.25, 1.5, 2.0]
+  corr_stress_grid: [0.0, 0.25, 0.5]   # R_s = (1 - c) R + c J
+  rf_grid: [0.04, 0.065, 0.08]
+  cap_grid: [0.025, 0.04, 0.06, 0.08, 0.10, 0.125, 0.15, 0.20, 0.30, 0.50, 0.75, 1.0]   # 12 values, 0.025 = 1/N for N = 40
+  frontier_caps_plot: [0.05, 0.10, 0.20, 0.50, 1.0]
+  frontier_fraction: 0.5           # the frontier portfolio used in the scenario table: this fraction of [min-variance return, max achievable return]
+  psd_tol: 1.0e-10                 # smallest eigenvalue must exceed -psd_tol * largest eigenvalue
+  monotone_tol: 1.0e-12            # optimal variance must not increase with the cap by more than this
+  min_variance_invariance_tol: 1.0e-12   # max L1 change of min-variance weights under mu perturbation
+  zero_perturbation_tol: 1.0e-12
+  periods:
+    "2015-2019": ["2015-01-01", "2019-12-31"]
+    "2020-2022": ["2020-01-01", "2022-12-31"]
+    "2023-end": ["2023-01-01", "2026-12-31"]
+  calendar_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+  scenarios:                       # mu shift in standard errors (sigma_i / sqrt(years)), volatility multiplier, correlation stress c, rf override
+    - {name: base, mu_shift_se: 0.0, vol_scale: 1.0, corr_c: 0.0, rf: null}
+    - {name: bear, mu_shift_se: -1.0, vol_scale: 1.0, corr_c: 0.0, rf: null}
+    - {name: bull, mu_shift_se: 1.0, vol_scale: 1.0, corr_c: 0.0, rf: null}
+    - {name: high_volatility, mu_shift_se: 0.0, vol_scale: 1.5, corr_c: 0.0, rf: null}
+    - {name: high_correlation, mu_shift_se: 0.0, vol_scale: 1.0, corr_c: 0.5, rf: null}
+    - {name: rf_8pct, mu_shift_se: 0.0, vol_scale: 1.0, corr_c: 0.0, rf: 0.08}
+  duality:
+    random_multipliers: 1000       # random dual-feasible vectors for the weak-duality check
+    strong_gap_tol: 1.0e-9         # |dual - primal| at the solver's multipliers
+    weak_duality_tol: 1.0e-12      # dual value may exceed the primal optimum by at most this
+    complementary_tol: 1.0e-9
+    seed: 5
+    worked_example:                # 3 assets, reproduced in docs/kkt_duality_notes.md
+      sigma: [[0.04, 0.012, 0.006], [0.012, 0.09, 0.018], [0.006, 0.018, 0.16]]
+      mu: [0.06, 0.10, 0.14]
+      cap: 0.42
+      target: 0.11
+  output_suffix: "_sens"
+  notes_path: "docs/kkt_duality_notes.md"   # the worked example and verification blocks of the notes are regenerated by the script
+
+# --- game theory: investor versus Nature (src/game.py, scripts/run_game.py) ---
+# Reused existing keys: portfolio.weight_cap, risk_free_rate, trading_days, robust.risk_aversion (the lambda in payoff mu'w - (lambda/2) w'Sigma w),
+# risk.cvar_alpha (the CVaR level, confidence 0.95, i.e. tail probability 0.05), wdro.ground_norm and wdro.mean_weight (the Wasserstein transport
+# cost and the CVaR objective, exactly as in src/wdro.py), solver_own (QP engine) and sensitivity.periods (the eras).
+game:
+  eras_source: "sensitivity.periods"       # eras = the sub-periods of the sensitivity section (2015-2019, 2020-2022, 2023-end of data)
+  six_scenario_table: "outputs/tables/scenario_sharpe_matrix_sens.csv"   # saved Sharpe matrix of the sensitivity task (degenerate: max-Sharpe has zero regret everywhere)
+  # portfolios of the era matrix, all weights computed ONCE on FULL-SAMPLE estimates. DR mean-variance epsilons are two mid-grid values chosen
+  # before running, distinct from the plug-in end (0) and from the near equal-weight end (0.1 is omitted for that reason).
+  portfolios: ["min_variance", "max_sharpe", "equal_weight", "dr_meanvar_0.0046", "dr_meanvar_0.0464"]
+  dr_meanvar_eps: [0.0046, 0.0464]
+  # ellipsoid game: Nature picks mu with (mu - mu_hat)' Sigma_mu^-1 (mu - mu_hat) <= kappa^2, Sigma_mu = Sigma / T, T = years of data
+  ellipsoid_kappas: [0.0, 0.5, 1.0, 2.0]   # full own-engine solution plus independent cvxpy confirmation; kappa = 0 must equal the plug-in
+  ellipsoid_curve_kappas: [0.25, 0.75, 1.5, 3.0, 4.0]   # extra points for the price-of-robustness curve (SOCP from src/robust.py only, flagged in the table)
+  ellipsoid_random_points: 5000            # random points of the ellipsoid used to check that mu* minimises the payoff of w*
+  # Wasserstein ball around the empirical distribution of the full-sample daily returns, radius eps in daily-return units
+  wasserstein_eps: [0.0, 0.0005, 0.001, 0.002, 0.005, 0.01]
+  wasserstein_design_eps: [0.0, 0.0046]    # DR-CVaR portfolios (src/wdro.py, kind cvar) designed at these radii, plus the 1/N portfolio
+  wasserstein_seed: 17
+  wasserstein_random_strategies: 100       # random feasible Nature strategies per (portfolio, eps), as extra lower bounds
+  # tolerances
+  lp_value_tol: 1.0e-9                     # |investor LP value - Nature LP value|
+  best_response_tol: 1.0e-8                # residuals of the best-response checks for mixed strategies
+  ellipsoid_value_tol: 1.0e-7              # max-min value versus min-max value (own engine versus cvxpy)
+  ellipsoid_weight_tol: 1.0e-4             # own saddle weights versus the SOCP of src/robust.py. Raised from 1e-5 after a test showed differences of 2.5e-5 while the own value was HIGHER than the
+                                           # SOCP's by 2e-10 and equal to the independent min-max to 1e-13: the SOCP runs at the solver's default tolerance, so it is the less accurate reference.
+                                           # The script also requires own value >= SOCP value - 1e-9.
+  ellipsoid_residual_tol: 1.0e-6           # saddle residuals (best-response gaps)
+  ellipsoid_boundary_tol: 1.0e-9           # mu* must lie on the ellipsoid boundary
+  golden_tol: 1.0e-12                      # golden-section tolerances inside the own-engine saddle solver
+  wasserstein_bound_tol: 1.0e-7            # relative gap below which lower and upper bound count as equal (reported, not a pass/fail criterion)
+  wasserstein_budget_tol: 1.0e-12          # transport cost of the constructed distribution may exceed eps by at most this (relative)
+  notes_path: "docs/game_theory_notes.md"  # generated blocks of the notes are rewritten by the script
+  output_suffix: "_game"
